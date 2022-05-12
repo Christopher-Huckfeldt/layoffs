@@ -1,0 +1,26 @@
+infile dictionary { 
+
+_column(1   )   long ssuseq      %5f "SU: Sequence Number of Sample Unit - P"
+_column(6   )  str12 ssuid      %12s "SU: Sample Unit Identifier"            
+_column(18  )    int spanel      %4f "SU: Sample Code - Indicates Panel Year"
+_column(22  )   byte swave       %2f "SU: Wave of data collection"           
+_column(24  )   byte srotaton    %1f "SU: Rotation of data collection"       
+_column(25  )   byte srefmon     %1f "SU: Reference month of this record"    
+_column(514 )   str4 epppnum     %4s "PE: Person number"
+_column(806 )   byte ejobcntr    %2f "LF: Number of jobs held during the ref"
+_column(832 )   byte elkwrk      %2f "LF: Spent time looking for work"       
+_column(834 )   byte alkwrk      %1f "LF: Allocation flag for ELKWRK."       
+_column(835 )   byte elayoff     %2f "LF: Spent time on layoff from a job"   
+_column(837 )   byte alayoff     %1f "LF: Allocation flag for ELAYOFF"       
+_column(857 )   byte rwkesr1     %2f "LF: Employment Status Recode for Week "
+_column(859 )   byte rwkesr2     %2f "LF: Employment Status Recode for Week "
+_column(861 )   byte rwkesr3     %2f "LF: Employment Status Recode for Week "
+_column(863 )   byte rwkesr4     %2f "LF: Employment Status Recode for Week "
+_column(865 )   byte rwkesr5     %2f "LF: Employment Status Recode for Week "
+_column(872 )   byte rmwklkg     %2f "LF: Number of weeks looking for work/o"
+_column(874 )   byte awklkg      %1f "LF: Allocation flag for RMWKLKG"       
+_column(877 )   byte rwksperm    %2f "LF: Number of weeks in this month"     
+_column(879 )   byte eeno1       %2f "JB: Across-wave employer index/number" 
+_column(955 )   byte eeno2       %2f "JB: Across-wave employer index/number" 
+
+}

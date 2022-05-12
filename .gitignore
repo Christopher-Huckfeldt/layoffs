@@ -1,0 +1,4 @@
+.*swp
+rawdata/*.gz
+tmpdata/*.dta
+logfiles/*.log
