@@ -15,19 +15,13 @@ in
 esac
 
 # download data from Census
-wget -O rawdata/l96puw1.dat.gz https://www2.census.gov/programs-surveys/sipp/data/datasets/1996/w1/l96puw1.dat.gz
-wget -O rawdata/l96puw2.dat.gz https://www2.census.gov/programs-surveys/sipp/data/datasets/1996/w2/l96puw2.dat.gz
-wget -O rawdata/l96puw3.dat.gz https://www2.census.gov/programs-surveys/sipp/data/datasets/1996/w3/l96puw3.dat.gz
-wget -O rawdata/l96puw4.dat.gz https://www2.census.gov/programs-surveys/sipp/data/datasets/1996/w4/l96puw4.dat.gz
-wget -O rawdata/l96puw5.dat.gz https://www2.census.gov/programs-surveys/sipp/data/datasets/1996/w5/l96puw5.dat.gz
-wget -O rawdata/l96puw6.dat.gz https://www2.census.gov/programs-surveys/sipp/data/datasets/1996/w6/l96puw6.dat.gz
-wget -O rawdata/l96puw7.dat.gz https://www2.census.gov/programs-surveys/sipp/data/datasets/1996/w7/l96puw7.dat.gz
-wget -O rawdata/l96puw8.dat.gz https://www2.census.gov/programs-surveys/sipp/data/datasets/1996/w8/l96puw8.dat.gz
-wget -O rawdata/l96puw9.dat.gz https://www2.census.gov/programs-surveys/sipp/data/datasets/1996/w9/l96puw9.dat.gz
-wget -O rawdata/l96puw10.dat.gz https://www2.census.gov/programs-surveys/sipp/data/datasets/1996/w10/l96puw10.dat.gz
-wget -O rawdata/l96puw11.dat.gz https://www2.census.gov/programs-surveys/sipp/data/datasets/1996/w11/l96puw11.dat.gz
-wget -O rawdata/l96puw12.dat.gz https://www2.census.gov/programs-surveys/sipp/data/datasets/1996/w12/l96puw12.dat.gz
+for wave in {1..12}
+do
+  wget -O rawdata/l96puw$wave.dat.gz https://www2.census.gov/programs-surveys/sipp/data/datasets/1996/w$wave/l96puw$wave.dat.gz
+done
 
 # run stata scripts
 stata-mp -b do genExtract
 stata-mp -b do runAnalysis
+
+rm genExtract.log runAnalysis.log
