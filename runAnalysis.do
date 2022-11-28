@@ -207,6 +207,8 @@ tab recallGHT candidate  if recall_date<last_tt & tt>first_tt
 * temporary work is different from recall.
 *ecflag, emoonlit
 
+* need employed if rwkesr2==2
+
 * list ID if undur[_n-1]==1 & rwkesr2[_n-1]==3 & rwkesr2==1
 
 * the major flaw: you are not using information that workers NOT on 
