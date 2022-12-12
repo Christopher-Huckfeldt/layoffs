@@ -85,7 +85,7 @@ frlink 1:1 ID tt, frame(subset)
 frget undur = undur, from(subset)
 frget undur_eu = undur_eu, from(subset)
 
-bys ID (tt): gen emp_eu = (rwkesr2==1 & (rwkesr2[_n+1]==3 | rwkesr2[_n+1]==4))
+bys ID (tt): gen emp_eu = ((rwkesr2==1 | rwkesr2==2) & (rwkesr2[_n+1]==3 | rwkesr2[_n+1]==4))
 
 * ----------------------------
 * Identify recalls from short samples
