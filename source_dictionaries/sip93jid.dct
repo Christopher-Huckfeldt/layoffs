@@ -1,0 +1,47 @@
+dictionary using /homes/data/sipp/1993/sipp93jid.dat  { 
+*This program reads the 1993 SIPP Revised Job ID Data File
+*Note:  This program is distributed under the GNU GPL. See end of
+*this file and http://www.gnu.org/licenses/ for details.
+*by Jean Roth Thu Mar 18 11:52:51 EST 2004
+*Please report errors to jroth@nber.org
+*run with do sip93jid
+*Change output file name/location as desired in the first line of the .dct file
+*If you are using a PC, you may need to change the direction of the slashes, as in C:\
+*  or "\\Nber\home\data\sipp\1993\sip93jid.dat"
+* The following changes in variable names have been made, if necessary:
+*      '$' to 'd';            '-' to '_';              '%' to 'p';
+* Note:  Variable names in Stata are case-sensitive
+
+_column(1   )   str9 suid        %9s "Sample unit identifier"                
+_column(10  )   str2 entry       %2s "Edited entry address ID"               
+_column(12  )   str3 pnum        %3s "Edited person number"                  
+_column(15  )    int panel       %4f "Sample code - indicates panel year"    
+_column(19  )   byte wave        %2f "Control card item 36A - wave number"   
+_column(21  )   byte jobid       %2f "Originally Released Employer I.D. numb"
+_column(23  )   byte jobid_revised    %2f "Edited Employer I.D. number"           
+_column(25  )   byte flag_jobid_chan    %1f "Indicator for whether a revision was m"
+
+}
+/*
+Copyright 2004 shared by the National Bureau of Economic Research and Jean Roth
+
+National Bureau of Economic Research.
+1050 Massachusetts Avenue
+Cambridge, MA 02138
+jroth@nber.org
+
+This program and all programs referenced in it are free software. You
+can redistribute the program or modify it under the terms of the GNU
+General Public License as published by the Free Software Foundation;
+either version 2 of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307
+USA.
+*/

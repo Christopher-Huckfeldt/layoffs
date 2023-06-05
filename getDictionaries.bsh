@@ -1,0 +1,36 @@
+#! /bin/sh
+# mkdict
+
+# download data from Census
+
+# 1993
+for wave in {1..9}
+do
+  wget -O ./source_dictionaries/sip93w$wave.dct https://data.nber.org/sipp/1993/sip93w$wave.dct
+done
+wget -O ./source_dictionaries/sip93jid.dct https://data.nber.org/sipp/1993/sip93jid.dct
+
+# 
+# # 1996
+# for wave in {1..12}
+# do
+#   wget -O ./source_dictionaries/sip96w$wave.dct https://data.nber.org/sipp/1996/sip96l$wave.dct
+# done
+# 
+# # 2001
+# for wave in {1..9}
+# do
+#   wget -O ./source_dictionaries/sip01w$wave.dct https://data.nber.org/sipp/2001/sip01w$wave.dct
+# done
+# 
+# # 2004
+# for wave in {1..12}
+# do
+#   wget -O ./source_dictionaries/sip04w$wave.dct https://data.nber.org/sipp/2004/sippl04puw$wave.dct
+# done
+# 
+# # 2008
+# for wave in {1..16}
+# do
+#   wget -O ./source_dictionaries/sip08w$wave.dct https://data.nber.org/sipp/2008/sippl08puw$wave.dct
+# done

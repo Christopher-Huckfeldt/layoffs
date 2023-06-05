@@ -1,4 +1,9 @@
-.*swp
+.*sw[po]
 rawdata/*.gz
 tmpdata/*.dta
 logfiles/*.log
+*.dat
+*.zip
+*.gz
+.DS_Store
+*.dta
