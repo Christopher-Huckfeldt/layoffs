@@ -14,9 +14,6 @@ do
      echo $year $i $jj
    	echo 'infile dictionary {' > ./dictionaries/ght"$year"w"$jj".dct
    	grep  -w -f $list $i | sed '
-   		s/\*#_//g
-   		s/_//g
-   		s/^.*$/_&/g
    		s/\([a-zA-Z]\)0\([1-9]\)/\1\2/g
    		' >> ./dictionaries/ght"$year"w"$jj".dct 
    	echo '}' >> ./dictionaries/ght"$year"w"$jj".dct
@@ -26,9 +23,6 @@ do
   # tail -n +15 source_dictionaries/sip"$year"jid.dct > tmp.dct
   echo 'infile dictionary {' > ./dictionaries/ght"$year"jid.dct
   grep -w -f $list ./source_dictionaries/sip93jid.dct | sed '
-  	s/\*#_//g
-  	s/_//g
-  	s/^.*$/_&/g
   	' >> ./dictionaries/ght"$year"jid.dct 
   echo '}' >> ./dictionaries/ght"$year"jid.dct
   echo '' >> ./dictionaries/ght"$year"jid.dct

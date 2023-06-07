@@ -6,7 +6,7 @@ log using "logfiles/runAnalysis.log", replace
 
 *foreach panel in 96 01 04 08 {
 
-local panel = "96"
+local panel = "01"
 {
 
   use tmpdata/cw`panel'.dta, clear
@@ -38,7 +38,6 @@ local panel = "96"
   
   gen undur = (rwkesr2==3 | rwkesr2==4)
   gen nedur = (rwkesr2==3 | rwkesr2==4 | rwkesr2==5)
-  gen TLdur = (rwkesr2==3)
   
   by ID (swave srefmon): gen undur_eu = (undur==1 & (rwkesr2[_n-1]==1|rwkesr2[_n-1]==2))
   gen undur_en = undur_eu // restrict attention to non-employment spells that begin with unemployment
@@ -67,9 +66,9 @@ local panel = "96"
   * ----------------------------
   
   frame change default
-  frames put ID tt nedur undur TLdur undur_eu undur_en, into(subset)
+  frames put ID tt nedur undur undur_eu undur_en, into(subset)
   frame change subset
-  reshape wide undur nedur undur_eu undur_en TLdur, i(ID) j(tt)
+  reshape wide undur nedur undur_eu undur_en, i(ID) j(tt)
   *
   
   sort ID
@@ -119,7 +118,7 @@ local panel = "96"
   
   * capture drop EUE_GHT
   * capture drop EUEjob_GHT
-  capture drop EUEjob_GHTa
+  * capture drop EUEjob_GHTa
 *  capture drop RecallJob_GHT
 *  capture drop RecallJob_GHTa
   capture drop recall_GHT

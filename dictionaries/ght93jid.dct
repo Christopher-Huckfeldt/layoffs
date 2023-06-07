@@ -5,7 +5,7 @@ _column(12  )   str3 pnum        %3s "Edited person number"
 _column(15  )    int panel       %4f "Sample code - indicates panel year"    
 _column(19  )   byte wave        %2f "Control card item 36A - wave number"   
 _column(21  )   byte jobid       %2f "Originally Released Employer I.D. numb"
-_column(23  )   byte jobidrevised    %2f "Edited Employer I.D. number"           
-_column(25  )   byte flagjobidchan    %1f "Indicator for whether a revision was m"
+_column(23  )   byte jobid_revised    %2f "Edited Employer I.D. number"           
+_column(25  )   byte flag_jobid_chan    %1f "Indicator for whether a revision was m"
 }
 
