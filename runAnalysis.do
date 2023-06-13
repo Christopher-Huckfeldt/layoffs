@@ -14,8 +14,8 @@ quietly {
 
   use tmpdata/cw`panel'.dta, clear
   
-  egen pID = group(ssuseq ssuid epppnum )
-  gen id = ssuid+eentaid+epppnum
+  egen pID = group(ssuid epppnum )
+  *gen id = ssuid+eentaid+epppnum
   
   * -------------------------
   * main table
@@ -35,7 +35,7 @@ quietly {
   
   tab elayoff sub_esr if elayoff~=-1, row col
   
-  egen ID = group(ssuid eentaid epppnum)
+  egen ID = group(ssuid epppnum)
   sort ID swave srefmon
   
   
@@ -119,7 +119,7 @@ quietly {
   * Identify recalls from short samples, in "recall"
   * ----------------------------
   frame change default
-  frames put ID tt eeno1 eeno2 tpmsum1 tpmsum2 rwkesr2, into(recall)
+  frames put ID ssuid epppnum tt eeno1 eeno2 tpmsum1 tpmsum2 rwkesr2, into(recall)
   frame change recall
   sort ID tt
   
@@ -158,6 +158,7 @@ quietly {
      | (jbID2[_n-1]==jbID2[_n+1] & jbID2[_n-1]~=0)
      | (jbID2[_n-1]==jbID1[_n+1] & jbID2[_n-1]~=0));
   #delimit cr
+  dflkj
   #delimit;
   bys ID (tt_begin): gen stupid = 1 if _n~=1
      & ((jbID1[_n-1]==jbID1[_n+1] & jbID1[_n-1]~=0)
