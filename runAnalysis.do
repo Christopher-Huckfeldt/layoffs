@@ -140,7 +140,7 @@ quietly {
   replace jbID1=0 if status=="U"
   replace jbID2=0 if status=="U"
 
-  collapse (sum) lngth (min) tt_begin=tt (max) tt_end=tt, by(ID status jbID1 jbID2)
+  collapse (firstnm) rwkesr2 (sum) lngth (min) tt_begin=tt (max) tt_end=tt, by(ID ssuid epppnum status jbID1 jbID2)
   sort ID tt_begin
   bys ID (tt_begin): gen indx = _n
   order ID indx tt_begin tt_end lngth status jbID1 jbID2
