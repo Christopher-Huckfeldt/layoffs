@@ -16,40 +16,40 @@ esac
 
 
 
-# download data from Census
+#for_later # download data from Census
+#for_later for wave in {1..9}
+#for_later do
+#for_later   wget -O rawdata/sipp93w$wave.zip https://data.nber.org/sipp/1993/sipp93w$wave.zip
+#for_later done
+#for_later wget -O rawdata/sipp93jid.zip https://data.nber.org/sipp/1993/sipp93jid.zip
+#for_later wget -O rawdata/sipp93fp.zip https://data.nber.org/sipp/1993/sipp93fp.zip
+
+
+for wave in {1..12}
+do
+  wget -O rawdata/l96puw$wave.dat.gz https://www2.census.gov/programs-surveys/sipp/data/datasets/1996/w$wave/l96puw$wave.dat.gz
+done
+
 for wave in {1..9}
 do
-  wget -O rawdata/sipp93w$wave.zip https://data.nber.org/sipp/1993/sipp93w$wave.zip
+  wget -O rawdata/l01puw$wave.dat.gz https://www2.census.gov/programs-surveys/sipp/data/datasets/2001/w$wave/l01puw$wave.dat.gz
 done
-wget -O rawdata/sipp93jid.zip https://data.nber.org/sipp/1993/sipp93jid.zip
-wget -O rawdata/sipp93fp.zip https://data.nber.org/sipp/1993/sipp93fp.zip
 
+for wave in {1..12}
+do
+  wget -O rawdata/l04puw$wave.dat.gz https://www2.census.gov/programs-surveys/sipp/data/datasets/2004/w$wave/l04puw$wave.dat.gz
+done
 
-# for wave in {1..12}
-# do
-#   wget -O rawdata/l96puw$wave.dat.gz https://www2.census.gov/programs-surveys/sipp/data/datasets/1996/w$wave/l96puw$wave.dat.gz
-# done
-# 
-# for wave in {1..9}
-# do
-#   wget -O rawdata/l01puw$wave.dat.gz https://www2.census.gov/programs-surveys/sipp/data/datasets/2001/w$wave/l01puw$wave.dat.gz
-# done
-# 
-# for wave in {1..12}
-# do
-#   wget -O rawdata/l04puw$wave.dat.gz https://www2.census.gov/programs-surveys/sipp/data/datasets/2004/w$wave/l04puw$wave.dat.gz
-# done
-# 
-# for wave in {1..16}
-# do
-#   wget -O rawdata/l08puw$wave.dat.gz https://www2.census.gov/programs-surveys/sipp/data/datasets/2008/w$wave/l08puw$wave.dat.gz
-# done
-# 
-# # ./getDictionaries.bsh
-# # ./mkdict.bsh
-# 
-# # run stata scripts
-# #tmp stata-mp -b do genExtract
-# #tmp stata-mp -b do runAnalysis
-# #tmp 
-# #tmp rm genExtract.log runAnalysis.log
+for wave in {1..16}
+do
+  wget -O rawdata/l08puw$wave.dat.gz https://www2.census.gov/programs-surveys/sipp/data/datasets/2008/w$wave/l08puw$wave.dat.gz
+done
+
+./getDictionaries.bsh
+./mkdict.bsh
+
+# run stata scripts
+stata-mp -b do genExtract
+stata-mp -b do runAnalysis
+
+rm genExtract.log runAnalysis.log

@@ -5,63 +5,63 @@
 # note: comparison file needs ".*%" after each variable.  do following command.
 # sed 's/^.*$/&.*%/g' cw88 
 
-list=./varnames/varnames_pre96.dct
-for year in 93
+#for_laterlist=./varnames/varnames_pre96.dct
+#for_laterfor year in 93
+#for_laterdo
+#for_later   for i in source_dictionaries/sip"$year"w*.dct
+#for_later   do
+#for_later   	jj=$(echo $i | sed -e 's/^.*[lwt]\([[:digit:]]\)\([[:digit:]]\)*.*$/\1\2/')
+#for_later     echo $year $i $jj
+#for_later   	echo 'infile dictionary {' > ./dictionaries/ght"$year"w"$jj".dct
+#for_later   	grep  -w -f $list $i | sed '
+#for_later   		s/\([a-zA-Z]\)0\([1-9]\)/\1\2/g
+#for_later   		' >> ./dictionaries/ght"$year"w"$jj".dct 
+#for_later   	echo '}' >> ./dictionaries/ght"$year"w"$jj".dct
+#for_later   	echo '' >> ./dictionaries/ght"$year"w"$jj".dct
+#for_later   done
+#for_later  #
+#for_later  # tail -n +15 source_dictionaries/sip"$year"jid.dct > tmp.dct
+#for_later  echo 'infile dictionary {' > ./dictionaries/ght"$year"jid.dct
+#for_later  grep -w -f $list ./source_dictionaries/sip93jid.dct | sed '
+#for_later  	' >> ./dictionaries/ght"$year"jid.dct 
+#for_later  echo '}' >> ./dictionaries/ght"$year"jid.dct
+#for_later  echo '' >> ./dictionaries/ght"$year"jid.dct
+#for_later  
+#for_laterdone
+#for_later
+#for_laterlist=./varnames/varnames_fp.dct
+#for_latersource=./source_dictionaries/sip93fp.dct
+#for_laterfor year in 93
+#for_laterdo
+#for_later  echo 'infile dictionary {' > ./dictionaries/ght"$year"fp.dct
+#for_later  grep -w -f $list $source | sed >> ./dictionaries/ght"$year"fp.dct 
+#for_later  echo '}' >> ./dictionaries/ght"$year"fp.dct
+#for_later  echo '' >> ./dictionaries/ght"$year"fp.dct
+#for_later  #
+#for_laterdone
+
+
+list=varnames_post96.dct
+for year in 96 01 04 08
 do
-   for i in source_dictionaries/sip"$year"w*.dct
-   do
-   	jj=$(echo $i | sed -e 's/^.*[lwt]\([[:digit:]]\)\([[:digit:]]\)*.*$/\1\2/')
-     echo $year $i $jj
-   	echo 'infile dictionary {' > ./dictionaries/ght"$year"w"$jj".dct
-   	grep  -w -f $list $i | sed '
-   		s/\([a-zA-Z]\)0\([1-9]\)/\1\2/g
-   		' >> ./dictionaries/ght"$year"w"$jj".dct 
-   	echo '}' >> ./dictionaries/ght"$year"w"$jj".dct
-   	echo '' >> ./dictionaries/ght"$year"w"$jj".dct
-   done
-  #
-  # tail -n +15 source_dictionaries/sip"$year"jid.dct > tmp.dct
-  echo 'infile dictionary {' > ./dictionaries/ght"$year"jid.dct
-  grep -w -f $list ./source_dictionaries/sip93jid.dct | sed '
-  	' >> ./dictionaries/ght"$year"jid.dct 
-  echo '}' >> ./dictionaries/ght"$year"jid.dct
-  echo '' >> ./dictionaries/ght"$year"jid.dct
-  
+  for i in source_dictionaries/sip"$year"w*.dct
+  do
+  	jj=$(echo $i | sed -e 's/^.*[lwt]\([[:digit:]]\)\([[:digit:]]\)*.*$/\1\2/')
+    echo $year $i $jj
+  	echo 'infile dictionary {' > ./dictionaries/ght"$year"w"$jj".dct
+  	grep -w -f $list $i | sed '
+  		s/\*#_//g
+  		s/_//g
+  		s/^.*$/_&/g
+  		s/\([a-zA-Z]\)0\([1-9]\)/\1\2/g
+  		s/long suseqnum\(  *\)%\([1-9]\)f/str\2 suseqnum\1%\2s/g 
+  		s/long suid\(  *\)%\([1-9]\)f/str\2 suid\1%\2s/g 
+  		s/byte ppentry\(  *\)%\([1-9]\)f/str\2 ppentry\1%\2s/g 
+  		s/int ppentry\(  *\)%\([1-9]\)f/str\2 ppentry\1%\2s/g 
+  		s/int pppnum\(  *\)%\([1-9]\)f/str\2 pppnum\1%\2s/g 
+  		s/byte h\([1-5]\)addid\( *\)%\([1-9]\)f/str\3 h\1addid\2%\3s/g
+  		' >> ./dictionaries/ght"$year"w"$jj".dct 
+  	echo '}' >> ./dictionaries/ght"$year"w"$jj".dct
+  	echo '' >> ./dictionaries/ght"$year"w"$jj".dct
+  done
 done
-
-list=./varnames/varnames_fp.dct
-source=./source_dictionaries/sip93fp.dct
-for year in 93
-do
-  echo 'infile dictionary {' > ./dictionaries/ght"$year"fp.dct
-  grep -w -f $list $source | sed >> ./dictionaries/ght"$year"fp.dct 
-  echo '}' >> ./dictionaries/ght"$year"fp.dct
-  echo '' >> ./dictionaries/ght"$year"fp.dct
-  #
-done
-
-
-#good list=varnames_post96.dct
-#good for year in 96 01 04 08
-#good do
-#good   for i in source_dictionaries/sip"$year"w*.dct
-#good   do
-#good   	jj=$(echo $i | sed -e 's/^.*[lwt]\([[:digit:]]\)\([[:digit:]]\)*.*$/\1\2/')
-#good     echo $year $i $jj
-#good   	echo 'infile dictionary {' > ./dictionaries/ght"$year"w"$jj".dct
-#good   	grep -w -f $list $i | sed '
-#good   		s/\*#_//g
-#good   		s/_//g
-#good   		s/^.*$/_&/g
-#good   		s/\([a-zA-Z]\)0\([1-9]\)/\1\2/g
-#good   		s/long suseqnum\(  *\)%\([1-9]\)f/str\2 suseqnum\1%\2s/g 
-#good   		s/long suid\(  *\)%\([1-9]\)f/str\2 suid\1%\2s/g 
-#good   		s/byte ppentry\(  *\)%\([1-9]\)f/str\2 ppentry\1%\2s/g 
-#good   		s/int ppentry\(  *\)%\([1-9]\)f/str\2 ppentry\1%\2s/g 
-#good   		s/int pppnum\(  *\)%\([1-9]\)f/str\2 pppnum\1%\2s/g 
-#good   		s/byte h\([1-5]\)addid\( *\)%\([1-9]\)f/str\3 h\1addid\2%\3s/g
-#good   		' >> ./dictionaries/ght"$year"w"$jj".dct 
-#good   	echo '}' >> ./dictionaries/ght"$year"w"$jj".dct
-#good   	echo '' >> ./dictionaries/ght"$year"w"$jj".dct
-#good   done
-#good done

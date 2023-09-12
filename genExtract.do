@@ -8,7 +8,7 @@ set seed 19840317
 
 
 
-/*-----------Extract 1996 Core Waves--------------*/
+/*-----------Extract Core Waves--------------*/
 
 *read
 foreach iyr in 96 01 04 08 {
