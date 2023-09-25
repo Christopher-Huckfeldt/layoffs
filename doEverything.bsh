@@ -16,13 +16,13 @@ esac
 
 
 
-#for_later # download data from Census
-#for_later for wave in {1..9}
-#for_later do
-#for_later   wget -O rawdata/sipp93w$wave.zip https://data.nber.org/sipp/1993/sipp93w$wave.zip
-#for_later done
-#for_later wget -O rawdata/sipp93jid.zip https://data.nber.org/sipp/1993/sipp93jid.zip
-#for_later wget -O rawdata/sipp93fp.zip https://data.nber.org/sipp/1993/sipp93fp.zip
+#this_is_for_later # download data from Census
+#this_is_for_later for wave in {1..9}
+#this_is_for_later do
+#this_is_for_later   wget -O rawdata/sipp93w$wave.zip https://data.nber.org/sipp/1993/sipp93w$wave.zip
+#this_is_for_later done
+#this_is_for_later wget -O rawdata/sipp93jid.zip https://data.nber.org/sipp/1993/sipp93jid.zip
+#this_is_for_later wget -O rawdata/sipp93fp.zip https://data.nber.org/sipp/1993/sipp93fp.zip
 
 
 for wave in {1..12}
