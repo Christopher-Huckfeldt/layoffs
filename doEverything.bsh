@@ -49,7 +49,7 @@ done
 ./mkdict.bsh
 
 # run stata scripts
-stata-mp -b do genExtract
-stata-mp -b do runAnalysis
+# stata-mp -b do genExtract
+# stata-mp -b do runAnalysis
 
-rm genExtract.log runAnalysis.log
+# rm genExtract.log runAnalysis.log

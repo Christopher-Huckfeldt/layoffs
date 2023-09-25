@@ -1,35 +1,44 @@
 clear all
 set more off
-capture log close
+* capture log close
 
-log using "logfiles/runAnalysis.log", replace
+* log using "logfiles/runAnalysis.log", replace
 clear all
 
 
 * note: drop people who are present for first wave? or people with gaps?
 
-foreach panel in 96 01 04 08 {
+*foreach panel in 96 01 04 08 {
+foreach panel in 96 {
 
+  local panel = 96
   use tmpdata/cw`panel'.dta, clear
-  
   
   egen ID = group(ssuid epppnum)
   sort ID swave srefmon
   
+  * NOTE: 1 if employment status in week 2 is equal to  3 or 4
   gen undur = (rwkesr2==3 | rwkesr2==4) // unemployed in week 2
   
+  * NOTE: For every ID in each swave and srefmon undur_eu is 1 if rwkesr2 is 3, 4 and the previous value of rwkesr2 is 1 or 2. 
   by ID (swave srefmon): gen undur_eu = (undur==1 & (rwkesr2[_n-1]==1|rwkesr2[_n-1]==2)) // E to U
+  * NOTE: Is this like total time or something?
   gen tt = srefmon + (swave-1)*4
+  sum tt
+  
   
   * ---------------------------------------------------
   * Compute unemployment duration into "subset`panel'"
   * ---------------------------------------------------
+
+  local panel = 96
   
   frame change default
   frames put ID tt undur undur_eu, into(subset`panel')
   frame change subset`panel'
   quietly sum tt
-  local tmax = r(max)
+  local tmax = r(max) 
+  * NOTE: 48 different undur and undur_eu each one for the tt. 
   reshape wide undur undur_eu, i(ID) j(tt)
   *
   
@@ -37,20 +46,30 @@ foreach panel in 96 01 04 08 {
   sort ID
   forvalues i=2/`tmax' {
     local j=`i'-1
+    * NOTE: If undur(x) and undur(x-1) are both not 0 then undur(x) + undur(x-1) 
+    * NOTE: Counting the duration of a period of unemployment based on just week 2 unemployment
     by ID: replace undur`i' = undur`i' + undur`j' if undur`j'~=0 & undur`i'~=0
   }
   
   * get unemployment duration for contiguous spells that begin with layoff
   forvalues i=2/`tmax' {
     local j=`i'-1
+    * NOTE: If undur_eu(x-1) and undur(x) are both not 0 then +1
+    * NOTE: Count if you went from employed to unemployed
+    * We calculate how many months you have been unemployed in your 
+    * current spell, conditional on that spell being preceeded by 
+    * employment.
     by ID: replace undur_eu`i' = 1 + undur_eu`j' if undur_eu`j'~=0 & undur`i'~=0
   }
   
   * spell level descriptors
   reshape long undur undur_eu, i(ID) j(tt)
   sort ID tt
+  * NOTE: spell begin is the period where the E to U transition happened
   gen spell_begin = tt if undur_eu==1
+  * NOTE: If a transition began in the previous period and undur_eu is at least 2 then make every subsequent spell_begin the same tt. 
   by ID (tt), sort: replace spell_begin = spell_begin[_n-1] if spell_begin[_n-1]>0 & spell_begin[_n-1]~=. & undur_eu>1 & undur_eu~=.
+  * NOTE: Spell end would calculated from the final value in the column tt
   by ID spell_begin (tt), sort: gen spell_end = tt[_N]
   replace spell_end = . if spell_begin==.
   gen spell_length = spell_end-spell_begin+1
@@ -58,11 +77,14 @@ foreach panel in 96 01 04 08 {
   * Index contiguous unemployment spells beginning with "EU" transition
   frames put ID tt spell_begin spell_end undur_eu, into(subsubset)
   frame change subsubset
-  drop if undur_eu==.
+  drop if undur_eu==. | undur_eu==0
+  * NOTE: For every ID, spell_begin, spell_end collapse by the max unemployment transition length, since we currently have 48 tt
   collapse (max) undur_eu, by(ID spell_begin spell_end)
+  * NOTE: A count of the number of unemployment spells by ID 
   bys ID (spell_begin): gen eu_index = _n
 
   * Put index numbers into main dataset
+  local panel=96
   frame change subset`panel'
   frlink m:1 ID spell_begin, frame(subsubset)
   frget eu_index = eu_index, from(subsubset)
@@ -75,10 +97,13 @@ foreach panel in 96 01 04 08 {
   frame change recall
   sort ID tt
   
+  * NOTE: jbID is based off the code for either two jobs and whether the earning associated with either job is not 0 
+  * NOTE: eeno is -1 if no job?
   gen jbID1 = eeno1*(tpmsum1!=0) //  another option is to use rwkesr2==1
   gen jbID2 = eeno2*(tpmsum2!=0)
-  replace jbID1=0 if jbID1<0 | jbID1==.
-  replace jbID2=0 if jbID2<0 | jbID2==.
+  * NOTE: Replace with 0 if the individual had no job
+  replace jbID1=0 if jbID1<0 | jbID1==. // redundant
+  replace jbID2=0 if jbID2<0 | jbID2==. // redundant
   gen lngth = 1
 
   * _temporarily_ simplify employment status
@@ -89,15 +114,19 @@ foreach panel in 96 01 04 08 {
 
   * simplify: some workers might have a jobid even though they don't 
   * work in second week of month.
+  * NOTE: If the individual reported that they were unemployed then we should make their jbID 0
   replace jbID1=0 if status=="U" | status=="N"
   replace jbID2=0 if status=="U" | status=="N"
 
+  * NOTE: Different groupings for every combination of employment and earnings amount
   egen spellID = group(status jbID1 jbID2)
   * note, a single employment spells for an individual could potentially have _multiple_ IDs, 
   * whereas unemployment spells will have single ID, identifiable from E-U-E.
   * measure is NOT individual specific.
+  * question: what is this for?
   
   frames put ID tt spellID, into(status_frm) // leave "recall"
+  * what does frm stand for?
   frame change status_frm
   quietly sum tt
   local tmax = r(max)
@@ -110,24 +139,36 @@ foreach panel in 96 01 04 08 {
 
   forvalues i=2/`tmax' {
     local j = `i'-1
+    * NOTE: A count of the spellID transitions for an ID -> (1 * tmax) 1 1 2 2 2 3 3 3 3 4
     replace indx`i' = indx`j' + 1*(spellID`i'~=spellID`j')
   }
   reshape long spellID indx, i(ID) j(tt)
+  * spellID was not specific to individuals. but indx tracks changes 
+  * in spellID within a given individual.
 
   frame change recall
   frlink 1:1 ID spellID tt, frame(status_frm)
   frget indx = indx, from(status_frm)
 
+  * NOTE: Collapse into each unique indx for every unique group ID ssuid epppnum. 
+  * NOTE: First unemployment status value, and Job ID values -> Bascially, we get to look at the U-E-X-N transitions and the different job ID changes for each transition
+  * NOTE: Total length of each indx -> E and 74 would mean employed for 4 periods
+  * NOTE: tt_being and tt_end just tell us the stand and end of each indx. 
   collapse (first) rwkesr2 status jbID1 jbID2 (sum) lngth (min) tt_begin=tt (max) tt_end=tt, by(ID ssuid epppnum indx)
   sort ID tt_begin
   order ID indx tt_begin tt_end lngth status jbID1 jbID2
   bys ID: egen max_indx = max(indx)
 
+  * WARNING: What is delimit doing here? I don't know what this is? delimiter?
+  * NOTE: E-U-E for where it is U will be 1
   #delimit;
   gen EUE = (indx>1 & indx<max_indx 
     & status=="U" & status[_n-1]=="E" & status[_n+1]=="E");
-  gen recall = .;
+  gen recall = .; // missing value
+  // NOTE: Starting our identification of whether we go from the same E to E.
   replace recall = 0 if EUE==1;
+  // NOTE: If the previous job in either ID1 and ID2 match if EUE is detected. 
+  // NOTE: However, be sure that the values that are matched are not 0. This is for the case where the individual only has 1 job across the E and E periods. 
   bys ID (tt_begin): replace recall = 1 if EUE==1
     & ((jbID1[_n-1]==jbID1[_n+1] & jbID1[_n-1]~=0)
      | (jbID1[_n-1]==jbID2[_n+1] & jbID1[_n-1]~=0)
@@ -136,6 +177,7 @@ foreach panel in 96 01 04 08 {
   #delimit cr
 
   bys ID: egen total_recall = total(recall)
+  * WARNING: Why are we replacing the total value of recell with a boolean for recall existence?
   replace total_recall = (total_recall>0 & total_recall~=.)
   keep if EUE==1
   rename tt_begin spell_begin
@@ -152,6 +194,7 @@ foreach panel in 96 01 04 08 {
 
   
   * merge variables from frame subsubset to frame subset`panel'
+  local panel = 96
   frame change subset`panel'
   frget recall     = recall, from(subsubset)
   frget unemp_type = unemp_type, from(subsubset)
@@ -164,6 +207,11 @@ foreach panel in 96 01 04 08 {
   frget rhcalyr = rhcalyr, from(default)
   frget rhcalmn = rhcalmn, from(default)
 
+  * Problems:
+  * spell_length collects information past point where individual left sample
+  * spell_length collects information before point where individual entered sample
+  * e.g., see "list if ID == 115101"
+
   gen UE=.
   gen TL_E=.
   gen JL_E=.
@@ -171,21 +219,27 @@ foreach panel in 96 01 04 08 {
   gen E_TL=.
   gen E_JL=.
 
+  # NOTE: Unemployed to Employed
   bys ID (tt): replace UE = 0 if (rwkesr2==3 | rwkesr2==4)
   bys ID (tt): replace UE = 1 if (rwkesr2==3 | rwkesr2==4) & (rwkesr2[_n+1]==1 | rwkesr2[_n+1]==2)
   *
+  # NOTE: Temporarily Unemployed , but you expect to be remployed in the following period
   bys ID (tt): replace TL_E = 0 if (rwkesr2==3)
   bys ID (tt): replace TL_E = 1 if (rwkesr2==3) & (rwkesr2[_n+1]==1 | rwkesr2[_n+1]==2)
   *
+  # NOTE: Job Loss to employed
   bys ID (tt): replace JL_E = 0 if (rwkesr2==4)
   bys ID (tt): replace JL_E = 1 if (rwkesr2==4) & (rwkesr2[_n+1]==1 | rwkesr2[_n+1]==2)
 
+  # NOTE: Employed to Unemployed
   bys ID (tt): replace E_U = 0 if (rwkesr2==1 | rwkesr2==2)
   bys ID (tt): replace E_U = 1 if (rwkesr2==1 | rwkesr2==2) & (rwkesr2[_n+1]==3 | rwkesr2[_n+1]==4)
   *
+  # NOTE: Temporarily Employed
   bys ID (tt): replace E_TL = 0 if (rwkesr2==1 | rwkesr2==2)
   bys ID (tt): replace E_TL = 1 if (rwkesr2==1 | rwkesr2==2) & (rwkesr2[_n+1]==3)
   *
+  # NOTE: Employed to Job Loss
   bys ID (tt): replace E_JL = 0 if (rwkesr2==1 | rwkesr2==2)
   bys ID (tt): replace E_JL = 1 if (rwkesr2==1 | rwkesr2==2) & (rwkesr2[_n+1]==4)
 
@@ -198,6 +252,9 @@ foreach panel in 96 01 04 08 {
       di "PS"
     }
     forvalues i=1/8 {
+      # NOTE: If you were Temporarily Unemployed(unemp_type and rwkesr2), and recalled to the same job?
+      # WARNING: Why does swave have to be less than 6?
+      # WARNING: Why does spell length have to be less than 8?
       quietly count if recall==1 & unemp_type==`j' & rwkesr2==`j' & spell_end==tt & spell_length==`i' & swave<=6
       local numer = r(N)
       quietly count if rwkesr2==`j' & spell_length>=`i' & spell_begin==tt & swave<=6
@@ -212,6 +269,7 @@ foreach panel in 96 01 04 08 {
       di "year is `panel', t=`i', `recallP', `hireP'" 
     }
   }
+  # WARNING: What is the purpose for the second calculation? Why are there for cases where the unemp_type doesn't match the rwkesr2?
   forvalues j=3/4 {
     if (`j'==3) {
       di "TL"

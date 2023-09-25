@@ -8,7 +8,8 @@ clear all
 
 * note: drop people who are present for first wave? or people with gaps?
 
-foreach panel in 96 01 04 08 {
+*foreach panel in 96 01 04 08 {
+foreach panel in 96  {
 
   use tmpdata/cw`panel'.dta, clear
   
@@ -71,7 +72,7 @@ foreach panel in 96 01 04 08 {
   * Identify recalls from short samples, in "recall"
   * ----------------------------
   frame change default
-  frames put ID ssuid epppnum tt eeno1 eeno2 tpmsum1 tpmsum2 rwkesr2, into(recall)
+  frames put ID ssuid epppnum tt swave srefmon rhcalyr rhcalmn eeno1 eeno2 tpmsum1 tpmsum2 tpearn tejdate1 tejdate2 tsjdate1 tsjdate2 rwkesr2, into(recall)
   frame change recall
   sort ID tt
   
@@ -91,6 +92,10 @@ foreach panel in 96 01 04 08 {
   * work in second week of month.
   replace jbID1=0 if status=="U" | status=="N"
   replace jbID2=0 if status=="U" | status=="N"
+
+  gen anyjob = (eeno1>0 & eeno1~=.) | (eeno2>0 & eeno2~=.)
+  gen problem = (anyjob==1 & tpmsum1==0 & tpmsum2==0 & rwkesr2==1)
+  
 
   egen spellID = group(status jbID1 jbID2)
   * note, a single employment spells for an individual could potentially have _multiple_ IDs, 
@@ -118,7 +123,7 @@ foreach panel in 96 01 04 08 {
   frlink 1:1 ID spellID tt, frame(status_frm)
   frget indx = indx, from(status_frm)
 
-  collapse (first) rwkesr2 status jbID1 jbID2 (sum) lngth (min) tt_begin=tt (max) tt_end=tt, by(ID ssuid epppnum indx)
+  collapse (max) last_rhcalyr = rhcalyr last_rhcalmn=rhcalmn (min) first_rhcalyr = rhcalyr first_rhcalmn=rhcalmn (max) problem eeno1 eeno2 tejdate1 tejdate2 tsjdate1 tsjdate2 (first) rwkesr2 status jbID1 jbID2 (sum) lngth (min) tt_begin=tt (max) tt_end=tt, by(ID ssuid epppnum indx)
   sort ID tt_begin
   order ID indx tt_begin tt_end lngth status jbID1 jbID2
   bys ID: egen max_indx = max(indx)
@@ -137,10 +142,13 @@ foreach panel in 96 01 04 08 {
 
   bys ID: egen total_recall = total(recall)
   replace total_recall = (total_recall>0 & total_recall~=.)
+  bys ID (tt_begin): gen new_problem = EUE==1 & (problem[_n-1]==1 | problem[_n+1]==1)
+  dflkj
   keep if EUE==1
   rename tt_begin spell_begin
   rename rwkesr2 unemp_type
-  keep ID spell_begin recall EUE unemp_type
+  keep ID spell_begin recall EUE unemp_type problem
+  flkj
 
   * merge variables from frame recall to frame subsubset
   frame change subsubset

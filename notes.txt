@@ -1,0 +1,40 @@
+`run_Analysis.do' generates a sample of workers from the 1996, 2001, 
+2004, and 2008 SIPP panels who are observed to transition from 
+employment to unemployment and then back to employment within the 
+SIPP sample period. As in FM, we record a worker's monthly labor 
+force status according to their reported labor force status for the 
+second week of the month. 
+
+The code works as follows:
+
+1. First, we assemble a dataset recording contiguous periods of 
+unemployment for all workers in the sample (lines 29, "frame change 
+subset`panel'" to line 68, "frget eu_index = eu_index, 
+from(subsubset)"). We generate unique within-individual indices for 
+each contiguous unemployment spell that begins with a transition 
+from employment. We record the beginning date and ending date for 
+each such spell.
+
+2. We then generate a separate sample to record sequences of job IDs 
+held by workers throughout the sample. The SIPP has two fields for 
+job ID, eeno1 and eeno2. These variables take fixed values for each 
+wave, comprising a four month period. The sequence of job-holding 
+over months within a wave, however, can be discerned reported 
+earnings for the jobs, tpmsum1 and tpmsum2, which can vary across 
+months within a wave. Alternatively, a researcher can use the 
+variables tsjdate1 and tsjdate2 to learn the start date of a job 
+within a wave, conditional on it starting during a wave; and the variables tsedate1 
+and tsedate2 to learn the ending date of a job within a wave, 
+conditional on it ending during a wave. Both approaches yield nearly 
+identical results. However, given that the ts*date* variables are 
+reported only once within a wave, they cannot be used to discern 
+certain patterns of job holding, e.g., such as when a worker may 
+have multiple gaps of employment at a job within a wave.
+
+We report a worker employed and working at a job if the worker 
+reports that they are employed in the second week of a month 
+(rwkesr2==1 or rwkesr2==2). We assign a jobID to employed workers 
+for each month of a wave on the basis of their reported job ID 
+variables and 
+
+do we have instances in which a worker does nto have

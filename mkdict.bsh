@@ -41,7 +41,7 @@
 #for_laterdone
 
 
-list=varnames_post96.dct
+list=varnames/varnames_post96.dct
 for year in 96 01 04 08
 do
   for i in source_dictionaries/sip"$year"w*.dct
