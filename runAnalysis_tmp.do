@@ -5,13 +5,19 @@ capture log close
 log using "logfiles/runAnalysis.log", replace
 clear all
 
+local jobMethod="alt"
+local jobMethod=""
 
 * note: drop people who are present for first wave? or people with gaps?
 
-*foreach panel in 96 01 04 08 {
-foreach panel in 96  {
+foreach panel in 96 01 04 08 {
+*foreach panel in 96  {
 
   use tmpdata/cw`panel'.dta, clear
+  keep if wgt_merge==3
+*  drop if typeZ==1
+*  drop if no_pw
+  drop wgt_merge
   
   
   egen ID = group(ssuid epppnum)
@@ -75,11 +81,21 @@ foreach panel in 96  {
   frames put ID ssuid epppnum tt swave srefmon rhcalyr rhcalmn eeno1 eeno2 tpmsum1 tpmsum2 tpearn tejdate1 tejdate2 tsjdate1 tsjdate2 rwkesr2, into(recall)
   frame change recall
   sort ID tt
-  
-  gen jbID1 = eeno1*(tpmsum1!=0) //  another option is to use rwkesr2==1
-  gen jbID2 = eeno2*(tpmsum2!=0)
+
+  if "`jobMethod'"=="alt" {
+    gen jbID1=0
+    gen jbID2=0
+    replace jbID1 = eeno1 if (rwkesr2==1 | rwkesr2==2) & (eeno2<=0 | eeno2==.)
+    replace jbID2 = eeno2 if (rwkesr2==1 | rwkesr2==2) & (eeno1<=0 | eeno1==.)
+  }
+  else {
+    gen jbID1 = eeno1*(tpmsum1!=0)
+    gen jbID2 = eeno2*(tpmsum2!=0)
+  }
+
   replace jbID1=0 if jbID1<0 | jbID1==.
   replace jbID2=0 if jbID2<0 | jbID2==.
+
   gen lngth = 1
 
   * _temporarily_ simplify employment status
@@ -123,7 +139,7 @@ foreach panel in 96  {
   frlink 1:1 ID spellID tt, frame(status_frm)
   frget indx = indx, from(status_frm)
 
-  collapse (max) last_rhcalyr = rhcalyr last_rhcalmn=rhcalmn (min) first_rhcalyr = rhcalyr first_rhcalmn=rhcalmn (max) problem eeno1 eeno2 tejdate1 tejdate2 tsjdate1 tsjdate2 (first) rwkesr2 status jbID1 jbID2 (sum) lngth (min) tt_begin=tt (max) tt_end=tt, by(ID ssuid epppnum indx)
+  collapse (max) last_rhcalyr = rhcalyr last_rhcalmn=rhcalmn (min) first_rhcalyr = rhcalyr first_rhcalmn=rhcalmn (max) problem eeno1 eeno2 tejdate1 tejdate2 tsjdate1 tsjdate2 (first) srefmonA=srefmon rwkesr2 status jbID1 jbID2 (sum) lngth (min) tt_begin=tt (max) tt_end=tt (last) srefmonZ=srefmon, by(ID ssuid epppnum indx)
   sort ID tt_begin
   order ID indx tt_begin tt_end lngth status jbID1 jbID2
   bys ID: egen max_indx = max(indx)
@@ -143,12 +159,13 @@ foreach panel in 96  {
   bys ID: egen total_recall = total(recall)
   replace total_recall = (total_recall>0 & total_recall~=.)
   bys ID (tt_begin): gen new_problem = EUE==1 & (problem[_n-1]==1 | problem[_n+1]==1)
-  dflkj
+  gen tm_first = ym(first_rhcalyr,first_rhcalmn)
+  gen tm_last = ym(last_rhcalyr,last_rhcalmn)
+  format %tm tm_last tm_first
   keep if EUE==1
   rename tt_begin spell_begin
   rename rwkesr2 unemp_type
-  keep ID spell_begin recall EUE unemp_type problem
-  flkj
+  keep ID spell_begin recall EUE unemp_type problem srefmonA srefmonZ
 
   * merge variables from frame recall to frame subsubset
   frame change subsubset
@@ -157,6 +174,8 @@ foreach panel in 96  {
   frget recall = recall, from(rlnk)
   frget unemp_type = unemp_type, from(rlnk)
   frget EUE = EUE, from(rlnk)
+  frget srefmonA = srefmonA, from(rlnk)
+  frget srefmonZ = srefmonZ, from(rlnk)
 
   
   * merge variables from frame subsubset to frame subset`panel'
@@ -164,6 +183,8 @@ foreach panel in 96  {
   frget recall     = recall, from(subsubset)
   frget unemp_type = unemp_type, from(subsubset)
   frget EUE = EUE, from(subsubset)
+  frget srefmonA = srefmonA, from(subsubset)
+  frget srefmonZ = srefmonZ, from(subsubset)
 
   frlink 1:1 ID tt, frame(default)
   frget rwkesr2 = rwkesr2, from(default)
@@ -171,6 +192,9 @@ foreach panel in 96  {
   frget srefmon = srefmon, from(default)
   frget rhcalyr = rhcalyr, from(default)
   frget rhcalmn = rhcalmn, from(default)
+  frget lgtwgt = lgtwgt, from(default)
+  frget no_pw = no_pw, from(default)
+  frget typeZ = typeZ, from(default)
 
   gen UE=.
   gen TL_E=.
@@ -198,6 +222,8 @@ foreach panel in 96  {
   bys ID (tt): replace E_JL = 1 if (rwkesr2==1 | rwkesr2==2) & (rwkesr2[_n+1]==4)
 
 
+gen hire = 1-(recall==1)
+drop if typeZ==1 | no_pw==1
   forvalues j=3/4 {
     if (`j'==3) {
       di "TL"
@@ -206,20 +232,34 @@ foreach panel in 96  {
       di "PS"
     }
     forvalues i=1/8 {
-      quietly count if recall==1 & unemp_type==`j' & rwkesr2==`j' & spell_end==tt & spell_length==`i' & swave<=6
-      local numer = r(N)
-      quietly count if rwkesr2==`j' & spell_length>=`i' & spell_begin==tt & swave<=6
-      local denom = r(N)
-      local recallP = `numer'/`denom'
+      *quietly count if recall==1 & unemp_type==`j' & rwkesr2==`j' & spell_end==tt & spell_length==`i' & swave<=6
+      *local numer = r(N)
+      *quietly count if rwkesr2==`j' & unemp_type==`j' & spell_length>=`i' & spell_begin==tt & swave<=6
+      *local denom = r(N)
+      *local recallP = `numer'/`denom'
+      gen tmp = (recall==1 & spell_length==`i')
+      quietly reg tmp if unemp_type==`j' & rwkesr2==`j' & spell_end==tt & spell_length>=`i' & swave<=6 [pw=lgtwgt]
+      *quietly reg tmp if unemp_type==`j' & rwkesr2==`j' & spell_end==tt & spell_length>=`i' & swave<=6
+      local recallP = _b[_cons]
+      drop tmp
+*x      local recallP = r(mean)
       *
-      quietly count if recall==0 & unemp_type==`j' & rwkesr2==`j' & spell_end==tt & spell_length==`i' & swave<=6
-      local numer = r(N)
-      quietly count if rwkesr2==`j' & spell_length>=`i' & spell_begin==tt & swave<=6
-      local denom = r(N)
-      local hireP = `numer'/`denom'
+      *quietly count if recall==0 & unemp_type==`j' & rwkesr2==`j' & spell_end==tt & spell_length==`i' & swave<=6
+      *local numer = r(N)
+      *quietly count if rwkesr2==`j' & unemp_type==`j' & spell_length>=`i' & spell_begin==tt & swave<=6
+      *local denom = r(N)
+      *local hireP = `numer'/`denom'
+*x      quietly sum hire if unemp_type==`j' & rwkesr2==`j' & spell_end==tt & spell_length==`i' & swave<=6
+*x      local hireP = r(mean)
+      gen tmp = (recall==0 & spell_length==`i')
+      quietly reg tmp if unemp_type==`j' & rwkesr2==`j' & spell_end==tt & spell_length>=`i' & swave<=6 [pw=lgtwgt ]
+      quietly reg tmp if unemp_type==`j' & rwkesr2==`j' & spell_end==tt & spell_length>=`i' & swave<=6
+      local hireP = _b[_cons]
+      drop tmp
       di "year is `panel', t=`i', `recallP', `hireP'" 
     }
   }
+
   forvalues j=3/4 {
     if (`j'==3) {
       di "TL"
@@ -293,15 +333,21 @@ foreach panel in 96  {
   }
   * seam effect!
 
-  save tmpdata/recall`panel'.dta, replace
+  if "`jobMethod'"=="alt" {
+    save tmpdata/recall`panel'alt.dta, replace
+  }
+  else {
+    save tmpdata/recall`panel'.dta, replace
+  }
   clear all
 
 }
 
 
 
+             
 
-}
+
 
 
 foreach panel in 96 01 04 08 {

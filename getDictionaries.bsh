@@ -14,21 +14,25 @@ for wave in {1..12}
 do
   wget -O ./source_dictionaries/sip96w$wave.dct https://data.nber.org/sipp/1996/sip96l$wave.dct
 done
+wget -O ./source_dictionaries/sip96lw.dct https://data.nber.org/sipp/1996/sipp1996ctl_fer.dct
 
 # 2001
 for wave in {1..9}
 do
   wget -O ./source_dictionaries/sip01w$wave.dct https://data.nber.org/sipp/2001/sip01w$wave.dct
 done
+wget -O ./source_dictionaries/sip01lw.dct https://data.nber.org/sipp/2001/sip01lw9.dct
 
 # 2004
 for wave in {1..12}
 do
   wget -O ./source_dictionaries/sip04w$wave.dct https://data.nber.org/sipp/2004/sippl04puw$wave.dct
 done
+wget -O ./source_dictionaries/sip04lw.dct https://data.nber.org/sipp/2004/sipplgtwgt2004w12.dct
 
 # 2008
 for wave in {1..16}
 do
   wget -O ./source_dictionaries/sip08w$wave.dct https://data.nber.org/sipp/2008/sippl08puw$wave.dct
 done
+wget -O ./source_dictionaries/sip08lw.dct https://data.nber.org/sipp/2008/sipplgtwgt2008w16.dct

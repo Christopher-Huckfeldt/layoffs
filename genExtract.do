@@ -32,6 +32,16 @@ foreach iyr in 96 01 04 08 {
       sh rm rawdata/l`iyr'puw`i'.dat
       save "tmpdata/p`iyr'w`i'.dta", replace 
     }
+
+    sh rm rawdata/l`iyr'wgt.dat // delete if already there
+    sh gunzip -c rawdata/l`iyr'wgt.dat.gz > rawdata/l`iyr'wgt.dat
+    sh chmod 644 rawdata/l`iyr'wgt.dat
+    di "`iyr'  `i'"
+    quietly infile using ./source_dictionaries/sip`iyr'lw.dct, using(rawdata/l`iyr'wgt.dat) clear
+    sh rm rawdata/l`iyr'wgt.dat
+    sort spanel ssuid epppnum
+    save "tmpdata/l`iyr'wgt.dta", replace 
+
   
   *append
   use tmpdata/p`iyr'w1.dta, clear
@@ -42,7 +52,43 @@ foreach iyr in 96 01 04 08 {
   }
   
   *sort and save
-  sort ssuid epppnum swave
+  sort spanel ssuid epppnum swave
+  merge m:1 spanel ssuid epppnum using tmpdata/l`iyr'wgt.dta
+  sh rm tmpdata/l`iyr'wgt.dta
+  rename _merge wgt_merge
+  gen typeZ = (eppintvw==3 | eppintvw==4)
+  sort spanel ssuid epppnum swave
+  if "`iyr'"=="08" {
+    gen lgtwgt = .
+    by spanel ssuid epppnum: replace lgtwgt = lgtpn1wt if rhcalyr==2008 | rhcalyr==2009
+    by spanel ssuid epppnum: replace lgtwgt = lgtpn2wt if rhcalyr==2010
+    by spanel ssuid epppnum: replace lgtwgt = lgtpn3wt if rhcalyr==2011
+    by spanel ssuid epppnum: replace lgtwgt = lgtpn4wt if rhcalyr==2012
+    by spanel ssuid epppnum: replace lgtwgt = lgtpn5wt if rhcalyr==2013
+    gen no_pw = (lgtpn1wt==0 | lgtpn1wt==.)
+  }
+  *
+  else if "`iyr'"=="04" {
+    gen lgtwgt = .
+    by spanel ssuid epppnum: replace lgtwgt = lgtpnwt1 if rhcalyr==2004
+    by spanel ssuid epppnum: replace lgtwgt = lgtpnwt2 if rhcalyr==2005
+    by spanel ssuid epppnum: replace lgtwgt = lgtpnwt3 if rhcalyr==2006
+    by spanel ssuid epppnum: replace lgtwgt = lgtpnwt4 if rhcalyr==2007
+    gen no_pw = (lgtpnwt1==0 | lgtpnwt1==.)
+  }
+  *
+  else if "`iyr'"=="01" {
+    gen lgtwgt = .
+    by spanel ssuid epppnum: replace lgtwgt = lgtpnwt1 if rhcalyr==2001
+    by spanel ssuid epppnum: replace lgtwgt = lgtpnwt2 if rhcalyr==2002
+    by spanel ssuid epppnum: replace lgtwgt = lgtpnwt3 if rhcalyr==2003
+    gen no_pw = (lgtpnwt1==0 | lgtpnwt1==.)
+  }
+  else {
+    gen lgtwgt = lgtpnlwt
+    gen no_pw = (lgtpnlwt==0 | lgtpnlwt==.)
+  }
+  sort spanel ssuid epppnum swave
   save tmpdata/cw`iyr'.dta, replace
 }
 

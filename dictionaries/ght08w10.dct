@@ -10,6 +10,7 @@ _column(28  )    int rhcalyr     %4f "SU: Calendar year for this reference month
 _column(137 )   long thearn      %7f "HH: Total household earned income"     
 _column(500 )   str3 eentaid     %3s "PE: Address ID of hhld where person entered"
 _column(503 )   str4 epppnum     %4s "PE: Person number"                     
+_column(507 )   byte eppintvw    %2f "PE: Person's interview status"         
 _column(619 )   long tpearn      %7f "PE: Total person's earned income for the"
 _column(656 )   long tppndist    %5f "PE: Distributions from pension plans"  
 _column(661 )   long tplumpsm    %6f "PE: Retirement lump sum payments"      

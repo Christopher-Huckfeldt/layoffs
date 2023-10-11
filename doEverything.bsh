@@ -25,25 +25,29 @@ esac
 #this_is_for_later wget -O rawdata/sipp93fp.zip https://data.nber.org/sipp/1993/sipp93fp.zip
 
 
-for wave in {1..12}
-do
-  wget -O rawdata/l96puw$wave.dat.gz https://www2.census.gov/programs-surveys/sipp/data/datasets/1996/w$wave/l96puw$wave.dat.gz
-done
+#tmp for wave in {1..12}
+#tmp do
+#tmp   wget -O rawdata/l96puw$wave.dat.gz https://www2.census.gov/programs-surveys/sipp/data/datasets/1996/w$wave/l96puw$wave.dat.gz
+#tmp done
+wget -O rawdata/l96wgt.dat.gz https://www2.census.gov/programs-surveys/sipp/data/datasets/1996/ctl_fer.dat.gz
 
-for wave in {1..9}
-do
-  wget -O rawdata/l01puw$wave.dat.gz https://www2.census.gov/programs-surveys/sipp/data/datasets/2001/w$wave/l01puw$wave.dat.gz
-done
+#tmp for wave in {1..9}
+#tmp do
+#tmp   wget -O rawdata/l01puw$wave.dat.gz https://www2.census.gov/programs-surveys/sipp/data/datasets/2001/w$wave/l01puw$wave.dat.gz
+#tmp done
+wget -O rawdata/l01wgt.dat.gz https://www2.census.gov/programs-surveys/sipp/data/datasets/2001/w9/lgtwgt2001w9.dat.gz
 
-for wave in {1..12}
-do
-  wget -O rawdata/l04puw$wave.dat.gz https://www2.census.gov/programs-surveys/sipp/data/datasets/2004/w$wave/l04puw$wave.dat.gz
-done
+#tmp for wave in {1..12}
+#tmp do
+#tmp   wget -O rawdata/l04puw$wave.dat.gz https://www2.census.gov/programs-surveys/sipp/data/datasets/2004/w$wave/l04puw$wave.dat.gz
+#tmp done
+wget -O rawdata/l04wgt.dat.gz https://www2.census.gov/programs-surveys/sipp/data/datasets/2004/w12/lgtwgt2004w12.dat.gz
 
-for wave in {1..16}
-do
-  wget -O rawdata/l08puw$wave.dat.gz https://www2.census.gov/programs-surveys/sipp/data/datasets/2008/w$wave/l08puw$wave.dat.gz
-done
+#tmp for wave in {1..16}
+#tmp do
+#tmp   wget -O rawdata/l08puw$wave.dat.gz https://www2.census.gov/programs-surveys/sipp/data/datasets/2008/w$wave/l08puw$wave.dat.gz
+#tmp done
+wget -O rawdata/l08wgt.dat.gz https://www2.census.gov/programs-surveys/sipp/data/datasets/2008/w16/lgtwgt2008w16.dat.gz
 
 ./getDictionaries.bsh
 ./mkdict.bsh
