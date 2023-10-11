@@ -1,0 +1,53 @@
+infile dictionary { 
+*This program reads the 2004 SIPP12 Longitudnal Weight Data File
+*by Jean Roth Wed Nov  3 15:33:37 EDT 2010
+
+*Please report errors to jroth.org
+*See the .do file for directions and run with do sipplgtwgt2004w12
+*NOTE:  This program is distributed under the GNU GPL. 
+*See end of this file and http://www.gnu.org/licenses/ for details.
+*by Jean Roth Wed Nov  3 15:33:37 EDT 2010
+*Please report errors to jroth@nber.org
+*run with do sipplgtwgt2004w12
+*Change output file name/location as desired in the first line of the .dct file
+*If you are using a PC, you may need to change the direction of the slashes, as in C:\
+*  or "\\Nber\home\data\sipp\2004\sipplgtwgt2004w12.dat"
+* The following changes in variable names have been made, if necessary:
+*      '$' to 'd';            '-' to '_';              '%' to 'p';
+* Note:  Variable names in Stata are case-sensitive
+
+_column(1   )   str8 lgtkey      %8s "PE: Person longitudinal key"           
+_column(9   )    int spanel      %4f "SU: Sample Code - Indicates Panel Year"
+_column(13  )  str12 ssuid      %12s "SU: Sample Unit Identifier"            
+_column(25  )   str4 epppnum     %4s "PE: Person number"                     
+_column(29  ) double lgtpnwt1 %10.4f "WW: Longitudinal Panel Weight"         
+_column(39  ) double lgtpnwt2 %10.4f "WW: Longitudinal Panel Weight"         
+_column(49  ) double lgtpnwt3 %10.4f "WW: Longitudinal Panel Weight"         
+_column(59  ) double lgtpnwt4 %10.4f "WW: Longitudinal Panel Weight"         
+_column(69  ) double lgtcy1wt %10.4f "WW: Longitudinal First Calendar Year Weight"
+_column(79  ) double lgtcy2wt %10.4f "WW: Longitudinal Second Calendar Year Weight"
+_column(89  ) double lgtcy3wt %10.4f "WW: Longitudinal Third Calendar Year Weight"
+_column(99  ) double lgtcy4wt %10.4f "WW: Longitudinal Fourth Calendar Year Weight"
+
+}
+
+** Copyright 2010 shared by the National Bureau of Economic Research and Jean Roth ;
+
+** National Bureau of Economic Research. ;
+** 1050 Massachusetts Avenue ;
+** Cambridge, MA 02138 ;
+** jroth@nber.org ;
+
+** This program and all programs referenced in it are free software. You ;
+** can redistribute the program or modify it under the terms of the GNU ;
+** General Public License as published by the Free Software Foundation; 
+** either version 2 of the License, or (at your option) any later version. ;
+
+** This program is distributed in the hope that it will be useful, ;
+** but WITHOUT ANY WARRANTY, without even the implied warranty of ;
+** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the ;
+** GNU General Public License for more details. ;
+
+** You should have received a copy of the GNU General Public License ;
+** along with this program, if not, write to the Free Software ;
+** Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA. ;

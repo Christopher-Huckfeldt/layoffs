@@ -111,6 +111,7 @@ foreach panel in 96 01 04 08 {
 
   gen anyjob = (eeno1>0 & eeno1~=.) | (eeno2>0 & eeno2~=.)
   gen problem = (anyjob==1 & tpmsum1==0 & tpmsum2==0 & rwkesr2==1)
+  gen nojob_havepay = (rwkesr2==3 | rwkesr2==4) & ((tpmsum1>0 & tpmsum1~=.) | (tpmsum2>0 & tpmsum2~=.))
   
 
   egen spellID = group(status jbID1 jbID2)
@@ -139,7 +140,7 @@ foreach panel in 96 01 04 08 {
   frlink 1:1 ID spellID tt, frame(status_frm)
   frget indx = indx, from(status_frm)
 
-  collapse (max) last_rhcalyr = rhcalyr last_rhcalmn=rhcalmn (min) first_rhcalyr = rhcalyr first_rhcalmn=rhcalmn (max) problem eeno1 eeno2 tejdate1 tejdate2 tsjdate1 tsjdate2 (first) srefmonA=srefmon rwkesr2 status jbID1 jbID2 (sum) lngth (min) tt_begin=tt (max) tt_end=tt (last) srefmonZ=srefmon, by(ID ssuid epppnum indx)
+  collapse (max) nojob_havepay last_rhcalyr = rhcalyr last_rhcalmn=rhcalmn (min) first_rhcalyr = rhcalyr first_rhcalmn=rhcalmn (max) problem eeno1 eeno2 tejdate1 tejdate2 tsjdate1 tsjdate2 (first) srefmonA=srefmon rwkesr2 status jbID1 jbID2 (sum) lngth (min) tt_begin=tt (max) tt_end=tt (last) srefmonZ=srefmon, by(ID ssuid epppnum indx)
   sort ID tt_begin
   order ID indx tt_begin tt_end lngth status jbID1 jbID2
   bys ID: egen max_indx = max(indx)
@@ -165,7 +166,7 @@ foreach panel in 96 01 04 08 {
   keep if EUE==1
   rename tt_begin spell_begin
   rename rwkesr2 unemp_type
-  keep ID spell_begin recall EUE unemp_type problem srefmonA srefmonZ
+  keep ID spell_begin recall EUE unemp_type problem srefmonA srefmonZ nojob_havepay
 
   * merge variables from frame recall to frame subsubset
   frame change subsubset
@@ -176,6 +177,7 @@ foreach panel in 96 01 04 08 {
   frget EUE = EUE, from(rlnk)
   frget srefmonA = srefmonA, from(rlnk)
   frget srefmonZ = srefmonZ, from(rlnk)
+  frget nojob_havepay = nojob_havepay, from(rlnk)
 
   
   * merge variables from frame subsubset to frame subset`panel'
@@ -185,6 +187,7 @@ foreach panel in 96 01 04 08 {
   frget EUE = EUE, from(subsubset)
   frget srefmonA = srefmonA, from(subsubset)
   frget srefmonZ = srefmonZ, from(subsubset)
+  frget nojob_havepay = nojob_havepay, from(subsubset)
 
   frlink 1:1 ID tt, frame(default)
   frget rwkesr2 = rwkesr2, from(default)
@@ -232,28 +235,12 @@ drop if typeZ==1 | no_pw==1
       di "PS"
     }
     forvalues i=1/8 {
-      *quietly count if recall==1 & unemp_type==`j' & rwkesr2==`j' & spell_end==tt & spell_length==`i' & swave<=6
-      *local numer = r(N)
-      *quietly count if rwkesr2==`j' & unemp_type==`j' & spell_length>=`i' & spell_begin==tt & swave<=6
-      *local denom = r(N)
-      *local recallP = `numer'/`denom'
       gen tmp = (recall==1 & spell_length==`i')
       quietly reg tmp if unemp_type==`j' & rwkesr2==`j' & spell_end==tt & spell_length>=`i' & swave<=6 [pw=lgtwgt]
-      *quietly reg tmp if unemp_type==`j' & rwkesr2==`j' & spell_end==tt & spell_length>=`i' & swave<=6
       local recallP = _b[_cons]
       drop tmp
-*x      local recallP = r(mean)
-      *
-      *quietly count if recall==0 & unemp_type==`j' & rwkesr2==`j' & spell_end==tt & spell_length==`i' & swave<=6
-      *local numer = r(N)
-      *quietly count if rwkesr2==`j' & unemp_type==`j' & spell_length>=`i' & spell_begin==tt & swave<=6
-      *local denom = r(N)
-      *local hireP = `numer'/`denom'
-*x      quietly sum hire if unemp_type==`j' & rwkesr2==`j' & spell_end==tt & spell_length==`i' & swave<=6
-*x      local hireP = r(mean)
       gen tmp = (recall==0 & spell_length==`i')
       quietly reg tmp if unemp_type==`j' & rwkesr2==`j' & spell_end==tt & spell_length>=`i' & swave<=6 [pw=lgtwgt ]
-      quietly reg tmp if unemp_type==`j' & rwkesr2==`j' & spell_end==tt & spell_length>=`i' & swave<=6
       local hireP = _b[_cons]
       drop tmp
       di "year is `panel', t=`i', `recallP', `hireP'" 
