@@ -12,7 +12,6 @@ red    = '#dd5129';
 
 hf=figure('Position',[0 0 1000 600],'PaperPositionMode','Auto','DefaultAxesFontSize',13);
 
-%figure(3)
 subplot(1,2,2);
 hold on;
 plot(TL.duration , TL.pE , '-o' , 'MarkerSize', 10, 'Color' , red   , 'LineWidth' , 1.25)
@@ -21,8 +20,6 @@ plot(TL.duration , TL.pR , '-diamond' , 'MarkerSize', 10, 'Color' , blue  , 'Lin
 yL = get(gca,'Ylim')
 set(groot,'defaultAxesTickLabelInterpreter','latex');
 title('{From Temporary-Layoff Unemployment}','Interpreter','latex','Fontsize',15)
-%plot(dat,infm.stockE_mdl,'-o','Color',blue,'LineWidth',.75);
-%plot(dat(1:irf.nplot),infm.stockE_dat,'-sk','LineWidth',.75)
 set(gca,'XTick',TL.duration);
 line([4.5,4.5],yL,'LineStyle','--','Color',[0.5, 0.5, 0.5], 'LineWidth',0.75);
 ax=gca;

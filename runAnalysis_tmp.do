@@ -11,13 +11,12 @@ local jobMethod=""
 * note: drop people who are present for first wave? or people with gaps?
 
 foreach panel in 96 01 04 08 {
-*foreach panel in 96  {
 
   use tmpdata/cw`panel'.dta, clear
   keep if wgt_merge==3
-*  drop if typeZ==1
-*  drop if no_pw
   drop wgt_merge
+  drop if typeZ==1
+  drop if no_pw
   
   
   egen ID = group(ssuid epppnum)
