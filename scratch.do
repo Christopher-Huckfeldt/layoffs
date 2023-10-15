@@ -81,6 +81,10 @@
 use tmpdata/alldata`jobMethod', clear
 capture frame change default
 
+* -----------------
+* hazards, by panel
+* -----------------
+
 capture frame drop hazard_panel
 frame create hazard_panel
 frame hazard_panel: insobs 64 // 8 * 4 * 2
@@ -140,7 +144,73 @@ frame hazard_panel: replace pN=. if rwkesr2==4 & duration>4
 frame hazard_panel: sort rwkesr2 duration spanel
 frame hazard_panel: outsheet using hazard_panel.csv, comma replace
 
-/* aggregate */
+* -----------------
+* hazards, by panel & refmth
+* -----------------
+
+capture frame drop hazard_srefmonA
+frame create hazard_srefmonA
+frame hazard_srefmonA: insobs 256 // 8 * 4 * 2 * 4
+frame hazard_srefmonA: gen duration = .
+frame hazard_srefmonA: gen pE = .
+frame hazard_srefmonA: gen pN = .
+frame hazard_srefmonA: gen pR = .
+frame hazard_srefmonA: gen rwkesr2 = .
+frame hazard_srefmonA: gen srefmonA = .
+*
+frame change hazard_srefmonA
+local iter=1
+forvalues iesr = 3/4 {
+  forvalues isrefmonA = 1/4 {
+    forvalues idur = 1/8 {
+      replace duration=`idur' if _n==`iter'
+      replace rwkesr2=`iesr' if _n==`iter'
+      replace srefmonA=`isrefmonA' if _n==`iter'
+      local iter=`iter'+1
+    }
+  }
+}
+
+frame change default
+
+forvalues j=3/4 {
+  forvalues isrefmonA = 1/4 {
+    if (`j'==3) {
+      di "TL, `isrefmonA'"
+    }
+    else {
+      di "PS, `isrefmonA'"
+    }
+    forvalues i=1/8 {
+      capture drop tmp
+      gen tmp = (recall==1 & spell_length==`i')
+      quietly capture reg tmp if rwkesr2==`j' & spell_end==tt & spell_length>=`i' & swave<=6 & srefmonA==`isrefmonA' [pw=lgtwgt]
+      local recallP = _b[_cons]
+      frame hazard_srefmonA: quietly replace pR = `recallP' if duration==`i' & rwkesr2==`j' & srefmonA==`isrefmonA'
+      drop tmp
+      *
+      gen tmp = (recall==0 & spell_length==`i')
+      quietly capture reg tmp if rwkesr2==`j' & spell_end==tt & spell_length>=`i' & swave<=6 & srefmonA==`isrefmonA' [pw=lgtwgt ]
+      local hireP = _b[_cons]
+      frame hazard_srefmonA: quietly replace pN = `hireP' if duration==`i' & rwkesr2==`j' & srefmonA==`isrefmonA'
+      drop tmp
+      *
+      di "year is `ipanel', t=`i', `recallP', `hireP'" 
+      *
+      frame hazard_srefmonA: quietly replace pE = `recallP' + `hireP' if duration==`i' & rwkesr2==`j' & srefmonA==`isrefmonA'
+    }
+  }
+}
+
+frame hazard_srefmonA: replace pR=. if rwkesr2==4 & duration>4
+frame hazard_srefmonA: replace pN=. if rwkesr2==4 & duration>4
+frame hazard_srefmonA: sort rwkesr2 srefmonA duration
+frame hazard_srefmonA: outsheet using hazard_srefmonA.csv, comma replace
+
+* ------------------
+* hazards, aggregate
+* ------------------
+
 capture frame drop hazard
 frame create hazard
 frame hazard: insobs 16 // 8 * 2
@@ -212,6 +282,8 @@ dflkj
 
 clear all
 use tmpdata/alldata`jobMethod', clear
+
+
 capture frame drop hazard
 frame create hazard
 frame hazard: insobs 16
@@ -242,6 +314,7 @@ forvalues j=3/4 {
     di "year is `panel', t=`i', `recallP', `hireP'" 
   }
 }
+
 
 
 capture frame drop hazard
