@@ -11,6 +11,7 @@ classdef figures
             title_name, ...
             legend_status)
 
+
             data = data(data.rwkesr2 == which_rwkesr2, [which_probability, "spanel", "duration"]);
             average_data = average_data(average_data.rwkesr2 == which_rwkesr2, [which_probability, "duration"]);
             wide_data = unstack(data, which_probability, "spanel", "VariableNamingRule", "preserve");
@@ -28,9 +29,10 @@ classdef figures
                 waves(i).FaceColor = custom_colors{i};
             end
             if (legend_status==1)
-            legend_here = legend({'1996' '2001', '2004', '2008'}, 'interpreter','Latex')
+              legend_here = legend({'1996' '2001', '2004', '2008'}, 'interpreter','Latex')
               set(legend_here,...
-                  'Position',[0.914736842105263 0.0672546857772878 0.07 0.141124586549063],...
+                  'Position',[0.369536658236855 0.0321433263072406 0.286400367736816 0.0167365270460437],...
+                  'Orientation','horizontal',...
                   'Interpreter','latex');
             end
          
@@ -38,7 +40,31 @@ classdef figures
             plot(average_data.duration, average_data.(which_probability), '-ks', 'HandleVisibility', 'off',...
               'LineWidth', 2, 'MarkerSize', 10)
             xlabel("Months", 'interpreter','Latex')
-            title(title_name, 'interpreter','Latex')
+%            if which_probability=="pR"
+%
+%              if which_rwkesr2==3
+%                title_name = ['Temporary layoff'];
+%              else
+%                title_name = ['Permanent separation'];
+%              end
+%
+              title(title_name, 'FontSize',20,'interpreter','Latex')
+%
+%            end
+%
+%            if which_probability =="pR"  & which_rwkesr2==3
+%              ylabel(["Recall"], 'interpreter', 'latex')
+%
+%            elseif which_probability =="pN"  & which_rwkesr2==3
+%              ylabel("New job", 'interpreter', 'latex')
+%            elseif which_probability=="pE"  & which_rwkesr2==3
+%              ylabel("Recall + New job", 'interpreter', 'latex')
+%            end
+%
+%            hYLabel = get(gca,'YLabel');
+%            set(hYLabel,'rotation',0,'VerticalAlignment','middle')
+
+            grid on;
             hold off;
         end
 
@@ -61,7 +87,7 @@ classdef figures
             plot(use_data.duration, use_data.(which_probability), '-ks', 'HandleVisibility', 'off',...
               'LineWidth', 2, 'MarkerSize', 10)
             xlabel("Months", 'interpreter','Latex')
-            xlim([0,8])
+            xlim([0.5,8.5])
             xticks([1:1:8])
             xtickangle(0)
             title(title_name, 'interpreter','Latex')
