@@ -353,9 +353,58 @@ foreach panel in 1996 2001 2004 {
 
 
 
+capture file close tmpfile
+file open tmpfile using "tables/stats.txt", write replace
+
+file write tmpfile _n "# Recall rates" _n
+
 forvalues j=3/4 {
+
+  if `j'==3 {
+    local state = "TL"
+  }
+  else {
+    local state = "JL"
+  }
+
   reg recall if rwkesr2==`j' & spell_end==tt & spell_length<=4 & swave<=6 [pw=lgtwgt]
+  file write tmpfile "s/\<recall_`state'\>/" %5.3f (_b[_cons]) "/g"  _n
+  local j = 4
+  count if rwkesr2==`j' & spell_end==tt & spell_length<=4 & swave<=6 & spanel ==1996
+  foreach ispanel in 1996 2001 2004 2008 {
+    reg recall if rwkesr2==`j' & spell_end==tt & spell_length<=4 & swave<=6 & spanel==`ispanel' [pw=lgtwgt]
+    file write tmpfile "s/\<recall_`state'_`ispanel'\>/" %5.3f (_b[_cons]) "/g"  _n
+  }
 }
+
+
+file write tmpfile _n _n "# Distribution of first month" _n
+
+forvalues i=1/4 {
+  capture drop tmp
+  gen tmp = (srefmonA==`i')
+  reg tmp [pw=lgtwgt] if spell_length<=4 & spell_begin==tt & rwkesr2==3 & EUE==1
+  file write tmpfile "s/\<srefmonA`i'_TL\>/" %5.3f (_b[_cons]) "/g"  _n
+  reg tmp [pw=lgtwgt] if spell_length<=4 & spell_begin==tt & rwkesr2==4 & EUE==1
+  file write tmpfile "s/\<srefmonA`i'_PS\>/" %5.3f (_b[_cons]) "/g"  _n
+  * similar to "tab rwkesr2 srefmonA if spell_length<=4 & 
+  * spell_begin==tt & EUE==1, row", but with panel weights
+}
+
+file write tmpfile _n _n "# Distribution of last month" _n
+
+forvalues i=1/4 {
+  capture drop tmp
+  gen tmp = (srefmonZ==`i')
+  reg tmp [pw=lgtwgt] if spell_length<=4 & spell_begin==tt & rwkesr2==3 & EUE==1
+  file write tmpfile "s/\<srefmonZ`i'_TL\>/" %5.3f (_b[_cons]) "/g"  _n
+  reg tmp [pw=lgtwgt] if spell_length<=4 & spell_begin==tt & rwkesr2==4 & EUE==1
+  file write tmpfile "s/\<srefmonZ`i'_PS\>/" %5.3f (_b[_cons]) "/g"  _n
+  * similar to "tab rwkesr2 srefmonZ if spell_length<=4 & 
+  * spell_begin==tt & EUE==1, row", but with panel weights
+}
+
+file close tmpfile
 
 forvalues i=1/4 {
   forvalues j=3/4 {
@@ -364,8 +413,6 @@ forvalues i=1/4 {
   }
 }
 
-reg recall if rwkesr2==3 & spell_end==tt & spell_length<=4 & swave<=6 [pw=lgtwgt]
-reg recall if rwkesr2==4 & spell_end==tt & spell_length<=4 & swave<=6 [pw=lgtwgt]
 
 * "short spells" w/ seam cross
 reg recall if (rwkesr2==3 | rwkesr2==4) & spell_end==tt & seam_cross==1 & spell_length<=2 & spell_length>0 & swave<=6 [pw=lgtwgt]
