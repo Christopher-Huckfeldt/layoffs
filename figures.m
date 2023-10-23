@@ -30,11 +30,10 @@ classdef figures
             if (legend_status==1)
             legend_here = legend({'1996' '2001', '2004', '2008'}, 'interpreter','Latex')
               set(legend_here,...
-                    'Position',[0.875361940747505 0.0204208885494655 0.105357241630554 0.11595238049825],...
-                    'Interpreter','latex');
+                  'Position',[0.914736842105263 0.0672546857772878 0.07 0.141124586549063],...
+                  'Interpreter','latex');
             end
-
-            
+         
             hold on;
             plot(average_data.duration, average_data.(which_probability), '-ks', 'HandleVisibility', 'off',...
               'LineWidth', 2, 'MarkerSize', 10)
@@ -62,6 +61,7 @@ classdef figures
             plot(use_data.duration, use_data.(which_probability), '-ks', 'HandleVisibility', 'off',...
               'LineWidth', 2, 'MarkerSize', 10)
             xlabel("Months", 'interpreter','Latex')
+            xlim([0,8])
             xticks([1:1:8])
             xtickangle(0)
             title(title_name, 'interpreter','Latex')
