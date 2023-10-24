@@ -1,83 +1,84 @@
-*tmp local jobMethod="alt"
-*tmp local jobMethod=""
-*tmp 
-*tmp clear all
-*tmp set fredkey 74348ccf8d0c8e4873861aa692a29323
-*tmp import fred unrate
-*tmp drop daten
-*tmp sort datestr
-*tmp 
-*tmp gen date = substr(datestr,1,4)+substr(datestr,6,2)
-*tmp gen year = substr(datestr,1,4)
-*tmp gen month = substr(datestr,6,2)
-*tmp 
-*tmp destring date, replace
-*tmp destring year, replace
-*tmp destring month, replace
-*tmp gen ym = ym(year,month)
-*tmp format %tm ym
-*tmp sort ym
-*tmp rename UNRATE unrate
-*tmp save tmpdata/unrate, replace
-*tmp 
-*tmp 
-*tmp use tmpdata/recall96`jobMethod'.dta, clear
-*tmp gen spanel = 1996
-*tmp foreach panel in 01 04 08 {
-*tmp   append using tmpdata/recall`panel'`jobMethod'.dta
-*tmp   replace spanel = 2000+`panel' if spanel==.
-*tmp }
-*tmp gen ym = ym(rhcalyr, rhcalmn)
-*tmp format %tm ym
-*tmp 
-*tmp sort ym
-*tmp merge m:1 ym using tmpdata/unrate
-*tmp keep if _merge==3
-*tmp 
-*tmp save tmpdata/alldata`jobMethod', replace
-*tmp 
-*tmp forvalues i=1/2 {
-*tmp   use tmpdata/alldata`jobMethod', clear
-*tmp   
-*tmp   
-*tmp   drop TL_E
-*tmp   gen TL_E = .
-*tmp   replace TL_E = 0 if unemp_type==3 & UE==0
-*tmp   replace TL_E = 1 if unemp_type==3 & UE==1
-*tmp   
-*tmp   drop JL_E
-*tmp   gen JL_E = .
-*tmp   replace JL_E = 0 if unemp_type==4 & UE==0
-*tmp   replace JL_E = 1 if unemp_type==4 & UE==1
-*tmp   
-*tmp   
-*tmp   gen recall_prop  = recall
-*tmp   
-*tmp   gen recall_prob2 = .
-*tmp   replace recall_prob2 = 0 if TL_E==0
-*tmp   replace recall_prob2 = 1 if recall==1 & TL_E==1
-*tmp   
-*tmp   gen recall_prob3 = .
-*tmp   replace recall_prob3 = 0 if JL_E==0
-*tmp   replace recall_prob3 = 1 if recall==1 & JL_E==1
-*tmp   
-*tmp   gen recall_prob4 = .
-*tmp   replace recall_prob4 = 0 if UE==0
-*tmp   replace recall_prob4 = 1 if recall==1 & UE==1
-*tmp   
-*tmp   replace recall   = recall * UE
-*tmp   
-*tmp   if `i'==2 {
-*tmp     keep if swave<=6
-*tmp   *  keep if spell_length<=4
-*tmp   }
-*tmp   
-*tmp   collapse (count) num=recall (mean) unrate recall* UE E_U E_TL E_JL JL_E TL_E, by(ym)
-*tmp 
-*tmp   pwcorr unrate recall_prob2 recall_prop recall_prob3 unrate, sig
-*tmp }
-*tmp 
-*tmp   
+* local jobMethod="alt"
+local jobMethod=""
+
+clear all
+set fredkey 74348ccf8d0c8e4873861aa692a29323
+import fred unrate
+drop daten
+sort datestr
+
+gen date = substr(datestr,1,4)+substr(datestr,6,2)
+gen year = substr(datestr,1,4)
+gen month = substr(datestr,6,2)
+
+destring date, replace
+destring year, replace
+destring month, replace
+gen ym = ym(year,month)
+format %tm ym
+sort ym
+rename UNRATE unrate
+save tmpdata/unrate, replace
+
+
+use tmpdata/recall96`jobMethod'.dta, clear
+gen spanel = 1996
+foreach panel in 01 04 08 {
+  append using tmpdata/recall`panel'`jobMethod'.dta
+  replace spanel = 2000+`panel' if spanel==.
+}
+gen ym = ym(rhcalyr, rhcalmn)
+format %tm ym
+
+sort ym
+merge m:1 ym using tmpdata/unrate
+keep if _merge==3
+
+save tmpdata/alldata`jobMethod', replace
+
+* forvalues i=1/2 {
+  use tmpdata/alldata`jobMethod', clear
+  
+  
+  drop TL_E
+  gen TL_E = .
+  replace TL_E = 0 if unemp_type==3 & UE==0
+  replace TL_E = 1 if unemp_type==3 & UE==1
+  
+  drop JL_E
+  gen JL_E = .
+  replace JL_E = 0 if unemp_type==4 & UE==0
+  replace JL_E = 1 if unemp_type==4 & UE==1
+  
+  
+  gen recall_prop  = recall
+  
+  gen recall_prob2 = .
+  replace recall_prob2 = 0 if TL_E==0
+  replace recall_prob2 = 1 if recall==1 & TL_E==1
+  
+  gen recall_prob3 = .
+  replace recall_prob3 = 0 if JL_E==0
+  replace recall_prob3 = 1 if recall==1 & JL_E==1
+  
+  gen recall_prob4 = .
+  replace recall_prob4 = 0 if UE==0
+  replace recall_prob4 = 1 if recall==1 & UE==1
+  
+  replace recall   = recall * UE
+  
+*  if `i'==2 {
+*    keep if swave<=6
+*  *  keep if spell_length<=4
+*  }
+  
+  collapse (count) num=recall (mean) unrate recall* UE E_U E_TL E_JL JL_E TL_E, by(ym)
+
+  pwcorr unrate recall_prob2 recall_prop recall_prob3 unrate, sig
+* }
+
+flkj
+  
 use tmpdata/alldata`jobMethod', clear
 capture frame change default
 
@@ -364,12 +365,11 @@ forvalues j=3/4 {
     local state = "TL"
   }
   else {
-    local state = "JL"
+    local state = "PS"
   }
 
   reg recall if rwkesr2==`j' & spell_end==tt & spell_length<=4 & swave<=6 [pw=lgtwgt]
   file write tmpfile "s/\<recall_`state'\>/" %5.3f (_b[_cons]) "/g"  _n
-  local j = 4
   count if rwkesr2==`j' & spell_end==tt & spell_length<=4 & swave<=6 & spanel ==1996
   foreach ispanel in 1996 2001 2004 2008 {
     reg recall if rwkesr2==`j' & spell_end==tt & spell_length<=4 & swave<=6 & spanel==`ispanel' [pw=lgtwgt]
@@ -387,8 +387,17 @@ forvalues i=1/4 {
   file write tmpfile "s/\<srefmonA`i'_TL\>/" %5.3f (_b[_cons]) "/g"  _n
   reg tmp [pw=lgtwgt] if spell_length<=4 & spell_begin==tt & rwkesr2==4 & EUE==1
   file write tmpfile "s/\<srefmonA`i'_PS\>/" %5.3f (_b[_cons]) "/g"  _n
-  * similar to "tab rwkesr2 srefmonA if spell_length<=4 & 
-  * spell_begin==tt & EUE==1, row", but with panel weights
+}
+
+file write tmpfile _n _n "# Distribution of first and last month" _n
+
+forvalues i=1/4 {
+  capture drop tmp
+  gen tmp = (srefmonA==`i')
+  reg tmp [pw=lgtwgt] if spell_length<=4 & spell_begin==tt & rwkesr2==3 & EUE==1
+  file write tmpfile "s/\<srefmonA`i'_TL\>/" %5.3f (_b[_cons]) "/g"  _n
+  reg tmp [pw=lgtwgt] if spell_length<=4 & spell_begin==tt & rwkesr2==4 & EUE==1
+  file write tmpfile "s/\<srefmonA`i'_PS\>/" %5.3f (_b[_cons]) "/g"  _n
 }
 
 file write tmpfile _n _n "# Distribution of last month" _n

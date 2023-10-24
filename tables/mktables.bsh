@@ -1,0 +1,8 @@
+#!/bin/bash
+
+cp ./mktables_header.sed ./mktables.sed
+
+cat ./stats.txt | sed 's/^[ \t]*//' >> ./mktables.sed
+
+
+gsed -f ./mktables.sed ./TablesTemplate.tex > ./filled.tex

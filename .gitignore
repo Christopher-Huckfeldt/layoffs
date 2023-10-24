@@ -7,3 +7,8 @@ logfiles/*.log
 *.gz
 .DS_Store
 *.dta
+*.fls
+*.aux
+*.fdb_latexmk
+tables/filled.log
+tables/filled.out
