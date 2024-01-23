@@ -1,5 +1,7 @@
 \documentclass[12pt]{article}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\usepackage{tikz}
+\usepackage{algorithm,algpseudocode} % Did not work inside tikzpicture 
 \usepackage{setspace}
 \usepackage{xcolor}
 \usepackage{amssymb}
@@ -49,6 +51,22 @@
       \end{center}
     \end{table}
 
+    \begin{table}
+      \caption{Cyclical Properties of Recall}
+      \begin{center}
+    \begin{tabular}{l|rrrrrr}
+      \hline
+      \hline \\ [-1em] 
+      & \multicolumn{1}{c}{$u$} & \multicolumn{1}{c}{$p_{\text{recall}}$} & \multicolumn{1}{c}{$p_{TL,E}$} & \multicolumn{1}{c}{$p_{JL,E}$} & \multicolumn{1}{c}{$p_{E,TL}$} & \multicolumn{1}{c}{$p_{E,JL}$} \\[0.35em]  
+      \hline \\[-1em]
+      Sample mean                 & $6.11$ & $0.421 $ & $0.491 $ & $0.322$ & $0.003$ & $0.005$ \\[.35em]
+      Correlation with $u$ & $1.00$ & $-0.253$ & $-0.271$ & $0.484$ & $0.346$ & $0.341$ \\[.35em]
+      \hline
+      \hline
+    \end{tabular}
+      \end{center}
+  \end{table}
+
   \begin{figure}
     \caption{U-to-E Hazards: Recall and New Job-Finding\label{fig:UE}}
   \centerline{\includegraphics[width=1.00\linewidth]{./../figures/all}}
@@ -59,6 +77,51 @@
   \caption{SIPP interview structure}
     \begin{center}
       \includegraphics[width=\linewidth]{sipp_waves}
+
+% \begin{tikzpicture}
+%     \def\length{13}
+%     \def\pattern{1,...,13}
+% 
+%     % Draw the horizontal line
+%     \draw[-] (0.5,0) -- (\length+0.5,0);
+%         
+%     
+%     % Draw labels, ticks and text
+%     \foreach \x in \pattern {
+%         \pgfmathtruncatemacro{\modvalue}{mod(\x, 4)}
+%         % Draw the repeating labels
+%         \ifnum\modvalue=0
+%             \node at (\x, 0.1) -- (\x,-0.1) node[below] {4};
+%         \else
+%             \node at (\x, 0.1) -- (\x,-0.1) node[below] {\modvalue};
+%         \fi
+% 
+%         % Draw the major and the minor ticks
+%         \ifnum\ifnum\x=1 1 \else\ifnum\x=5 1 \else\ifnum\x=9 1 \else\ifnum\x=13 1 \else 0\fi\fi\fi=1
+%             \draw (\x-0.5,-0.25) -- (\x-0.5,0.25);
+% %        \else
+% %            \ifnum\x=\length
+% %                \draw (\x-0.5,-0.1) -- (\x-0.5,0.1);
+% %                \draw (\x+0.5,-0.1) -- (\x+0.5,0.1);
+% %            \else
+%                 \draw (\x-0.5,-0.1) -- (\x-0.5,0.1);
+% %            \fi
+%         \fi
+% 
+%         % Draw the text labels
+%         \ifnum\x=2
+%             \node[above] at (2.5,0.4) {Wave $t-1$}
+%         \fi
+%         
+%         \ifnum\x=6
+%             \node[above] at (6.5,0.4) {Wave $t$}
+%         \fi
+%         
+%         \ifnum\x=11
+%             \node[above] at (10.5,0.4) {Wave $t+1$}
+%         \fi
+%     }
+% \end{tikzpicture}
     \end{center}
   \end{figure}
 

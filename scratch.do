@@ -32,11 +32,13 @@ format %tm ym
 
 sort ym
 merge m:1 ym using tmpdata/unrate
+assert (_merge==1 & no_pw~=1) | _merge==2 | _merge==3
 keep if _merge==3
 
 save tmpdata/alldata`jobMethod', replace
 
-* forvalues i=1/2 {
+* ------
+
   use tmpdata/alldata`jobMethod', clear
   
   
@@ -69,13 +71,13 @@ save tmpdata/alldata`jobMethod', replace
   
 *  if `i'==2 {
 *    keep if swave<=6
-*  *  keep if spell_length<=4
+* drop if (rwkesr2==3 | rwkesr==4) & spell_length>4
 *  }
   
   collapse (count) num=recall (mean) unrate recall* UE E_U E_TL E_JL JL_E TL_E, by(ym)
 
-  pwcorr unrate recall_prob2 recall_prop recall_prob3 unrate, sig
-* }
+  sum unrate recall_prob2 TL_E JL_E E_TL E_JL
+  pwcorr unrate recall_prob2 TL_E JL_E E_TL E_JL, sig
 
 flkj
   
@@ -270,11 +272,16 @@ frame hazard: replace pR=. if rwkesr2==4 & duration>4
 frame hazard: replace pN=. if rwkesr2==4 & duration>4
 dflkj
 
-gen seam_cross = 0 if (rwkesr2==3 | rwkesr2==4) & spell_length<=4
-replace seam_cross = 1 if srefmonZ==4 & (rwkesr2==3 | rwkesr2==4) & spell_length<=4
-replace seam_cross = 1 if srefmonZ==1 & (rwkesr2==3 | rwkesr2==4) & spell_length<=4
-replace seam_cross = 1 if srefmonA>2 & srefmonZ==2 & (rwkesr2==3 | rwkesr2==4) & spell_length<=4
-replace seam_cross = 1 if srefmonA>3 & srefmonZ==3 & (rwkesr2==3 | rwkesr2==4) & spell_length<=4
+gen seam_cross = 1 if (rwkesr2==3 | rwkesr2==4) & spell_length<=4
+replace seam_cross = 0 if srefmonA==3 & srefmonZ==3 & (rwkesr2==3 | rwkesr2==4) & spell_length<=4
+replace seam_cross = 0 if srefmonA==3 & srefmonZ==4 & (rwkesr2==3 | rwkesr2==4) & spell_length<=4
+replace seam_cross = 0 if srefmonA==4 & srefmonZ==4 & (rwkesr2==3 | rwkesr2==4) & spell_length<=4
+
+*x gen seam_cross = 0 if (rwkesr2==3 | rwkesr2==4) & spell_length<=4
+*x replace seam_cross = 1 if srefmonZ==4 & (rwkesr2==3 | rwkesr2==4) & spell_length<=4
+*x replace seam_cross = 1 if srefmonZ==1 & (rwkesr2==3 | rwkesr2==4) & spell_length<=4
+*x replace seam_cross = 1 if srefmonA>2 & srefmonZ==2 & (rwkesr2==3 | rwkesr2==4) & spell_length<=4
+*x replace seam_cross = 1 if srefmonA>3 & srefmonZ==3 & (rwkesr2==3 | rwkesr2==4) & spell_length<=4
 
 tab seam_cross rwkesr2 if spell_length<=2, col
 tab seam_cross rwkesr2 if spell_length<=4, col
