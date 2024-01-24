@@ -1,6 +1,6 @@
 clear;
 close all;
-data = readtable('hazards.csv'); %,'Range','C1:H504');
+data = readtable('hazard.csv'); %,'Range','C1:H504');
 TL = data(1:8,:);
 JL = data(9:end,:);
 

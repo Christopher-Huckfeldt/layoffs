@@ -150,7 +150,7 @@ set(gcf,'PaperPositionMode','auto');
 set(gcf, 'PaperOrientation', 'portrait')
 set(gcf,'PaperSize',[str2num(figure_property.Width) str2num(figure_property.Height)]); % Canvas Size
 set(gcf,'Units','inches');
-hgexport(gcf,'figures/all.pdf',figure_property); %Set desired file name
+hgexport(gcf,'figures/exit_hazards.pdf',figure_property); %Set desired file name
 % set(gcf, "PaperPosition", [0,0,1900,900])
 % print('-dpdf', gcf, join(['figures/','all']));
 %%
