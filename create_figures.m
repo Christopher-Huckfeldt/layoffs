@@ -71,8 +71,8 @@ hgexport(gcf,'figures/exit_hazards.pdf',figure_property); %Set desired file name
 opt.rwkesr2 = {3,3,3,4,4,4}; % 3 or 4 
 opt.prob_col = {'pR','pN','pE','pR','pN','pE'}; % pR, pN, pE
 opt.lgnd = {0,0,0,0,0,1};
-opt.title_name = {'(A) TL: Exit to recall', '(B) TL: Exit to any employment', ... 
-  '(C) TL: Exit to new job', '(D) PS: Exit to recall', '(E) PS: Exit to new job', ...
+opt.title_name = {'(A) TL: Exit to recall', '(B) TL: Exit to new job', ... 
+  '(C) TL: Exit to any employment', '(D) PS: Exit to recall', '(E) PS: Exit to new job', ...
   '(F) PS: Exit to any employment'};
 
 figure('Position',[0 0 1400 1000],'PaperPositionMode','Auto','DefaultAxesFontSize',15);
@@ -91,8 +91,8 @@ end
 figure_property.units = 'inches';
 figure_property.format = 'pdf';
 figure_property.Preview= 'none';
-figure_property.Width= '11'; % Figure height on canvas
-figure_property.Height= '9'; % Figure width on canvas
+figure_property.Width= '16'; % Figure height on canvas
+figure_property.Height= '10'; % Figure width on canvas
 figure_property.Units= 'inches';
 figure_property.Color= 'rgb';
 figure_property.Background= 'w';

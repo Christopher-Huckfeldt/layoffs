@@ -29,31 +29,43 @@ esac
 #tmp do
 #tmp   wget -O rawdata/l96puw$wave.dat.gz https://www2.census.gov/programs-surveys/sipp/data/datasets/1996/w$wave/l96puw$wave.dat.gz
 #tmp done
-wget -O rawdata/l96wgt.dat.gz https://www2.census.gov/programs-surveys/sipp/data/datasets/1996/ctl_fer.dat.gz
+#tmp wget -O rawdata/l96wgt.dat.gz https://www2.census.gov/programs-surveys/sipp/data/datasets/1996/ctl_fer.dat.gz
 
 #tmp for wave in {1..9}
 #tmp do
 #tmp   wget -O rawdata/l01puw$wave.dat.gz https://www2.census.gov/programs-surveys/sipp/data/datasets/2001/w$wave/l01puw$wave.dat.gz
 #tmp done
-wget -O rawdata/l01wgt.dat.gz https://www2.census.gov/programs-surveys/sipp/data/datasets/2001/w9/lgtwgt2001w9.dat.gz
+#tmp wget -O rawdata/l01wgt.dat.gz https://www2.census.gov/programs-surveys/sipp/data/datasets/2001/w9/lgtwgt2001w9.dat.gz
 
 #tmp for wave in {1..12}
 #tmp do
 #tmp   wget -O rawdata/l04puw$wave.dat.gz https://www2.census.gov/programs-surveys/sipp/data/datasets/2004/w$wave/l04puw$wave.dat.gz
 #tmp done
-wget -O rawdata/l04wgt.dat.gz https://www2.census.gov/programs-surveys/sipp/data/datasets/2004/w12/lgtwgt2004w12.dat.gz
+#tmp wget -O rawdata/l04wgt.dat.gz https://www2.census.gov/programs-surveys/sipp/data/datasets/2004/w12/lgtwgt2004w12.dat.gz
 
 #tmp for wave in {1..16}
 #tmp do
 #tmp   wget -O rawdata/l08puw$wave.dat.gz https://www2.census.gov/programs-surveys/sipp/data/datasets/2008/w$wave/l08puw$wave.dat.gz
 #tmp done
-wget -O rawdata/l08wgt.dat.gz https://www2.census.gov/programs-surveys/sipp/data/datasets/2008/w16/lgtwgt2008w16.dat.gz
+#tmp wget -O rawdata/l08wgt.dat.gz https://www2.census.gov/programs-surveys/sipp/data/datasets/2008/w16/lgtwgt2008w16.dat.gz
 
-./getDictionaries.bsh
-./mkdict.bsh
+#tmp ./getDictionaries.bsh
+#tmp ./mkdict.bsh
 
 # run stata scripts
 # stata-mp -b do genExtract
 # stata-mp -b do runAnalysis
+stata-mp -b do createOutput
+
+cp ./tables/mktables_header.sed ./tables/mktables_sipp.sed
+cat ./tables/stats.txt | sed 's/^[ \t]*//' >> ./tables/mktables_sipp.sed
+gsed -f ./tables/mktables_sipp.sed ./tables/TablesTemplate.tex > ./tables/filled.tex
+cp ./tables/mktables_sipp.sed ../paper/tables/mktables_sipp.sed 
+                                                                           
+cp ./Figures/sipp_waves.pdf ../paper/figures_sipp/sipp_waves.pdf
+cp ./Figures/exit_hazards.pdf ../paper/figures_sipp/exit_hazards.pdf 
+cp ./Figures/exit_hazards_landscape.pdf ../paper/figures_sipp/exit_hazards_landscape.pdf 
+cp ./Figures/TL.pdf ../paper/figures_sipp/TL.pdf 
+cp ./Figures/PS.pdf ../paper/figures_sipp/PS.pdf 
 
 # rm genExtract.log runAnalysis.log
