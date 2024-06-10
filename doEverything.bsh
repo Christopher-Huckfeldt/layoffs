@@ -55,7 +55,7 @@ esac
 # run stata scripts
 # stata-mp -b do genExtract
 # stata-mp -b do runAnalysis
-stata-mp -b do createOutput
+# stata-mp -b do createOutput
 
 cp ./tables/mktables_header.sed ./tables/mktables_sipp.sed
 cat ./tables/stats.txt | sed 's/^[ \t]*//' >> ./tables/mktables_sipp.sed
