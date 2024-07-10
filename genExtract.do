@@ -58,6 +58,10 @@ foreach iyr in 96 01 04 08 {
   rename _merge wgt_merge
   gen typeZ = (eppintvw==3 | eppintvw==4)
   sort spanel ssuid epppnum swave
+  by spanel ssuid epppnum swave: egen typeZ_any = total(typeZ)
+  drop if typeZ_any>0
+  drop typeZ typeZ_any
+
   if "`iyr'"=="08" {
     gen lgtwgt = .
     by spanel ssuid epppnum: replace lgtwgt = lgtpn1wt if rhcalyr==2008 | rhcalyr==2009
@@ -88,6 +92,7 @@ foreach iyr in 96 01 04 08 {
     gen lgtwgt = lgtpnlwt
     gen no_pw = (lgtpnlwt==0 | lgtpnlwt==.)
   }
+  drop if no_pw==1
   sort spanel ssuid epppnum swave
   save tmpdata/cw`iyr'.dta, replace
 }

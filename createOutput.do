@@ -1,24 +1,24 @@
 * local jobMethod="alt"
 local jobMethod=""
-
-clear all
-set fredkey 74348ccf8d0c8e4873861aa692a29323
-import fred unrate
-drop daten
-sort datestr
-
-gen date = substr(datestr,1,4)+substr(datestr,6,2)
-gen year = substr(datestr,1,4)
-gen month = substr(datestr,6,2)
-
-destring date, replace
-destring year, replace
-destring month, replace
-gen ym = ym(year,month)
-format %tm ym
-sort ym
-rename UNRATE unrate
-save tmpdata/unrate, replace
+* 
+* clear all
+* set fredkey 74348ccf8d0c8e4873861aa692a29323
+* import fred unrate
+* drop daten
+* sort datestr
+* 
+* gen date = substr(datestr,1,4)+substr(datestr,6,2)
+* gen year = substr(datestr,1,4)
+* gen month = substr(datestr,6,2)
+* 
+* destring date, replace
+* destring year, replace
+* destring month, replace
+* gen ym = ym(year,month)
+* format %tm ym
+* sort ym
+* rename UNRATE unrate
+* save tmpdata/unrate, replace
 
 
 use tmpdata/recall96`jobMethod'.dta, clear
@@ -30,54 +30,54 @@ foreach panel in 01 04 08 {
 gen ym = ym(rhcalyr, rhcalmn)
 format %tm ym
 
-sort ym
-merge m:1 ym using tmpdata/unrate
-assert (_merge==1 & no_pw~=1) | _merge==2 | _merge==3
-keep if _merge==3
+* sort ym
+* merge m:1 ym using tmpdata/unrate
+* assert (_merge==1 & no_pw~=1) | _merge==2 | _merge==3
+* keep if _merge==3
 
 save tmpdata/alldata`jobMethod', replace
 
-* ------
-
-  use tmpdata/alldata`jobMethod', clear
-  
-  
-  drop TL_E
-  gen TL_E = .
-  replace TL_E = 0 if unemp_type==3 & UE==0
-  replace TL_E = 1 if unemp_type==3 & UE==1
-  
-  drop JL_E
-  gen JL_E = .
-  replace JL_E = 0 if unemp_type==4 & UE==0
-  replace JL_E = 1 if unemp_type==4 & UE==1
-  
-  
-  gen recall_prop  = recall
-  
-  gen recall_prob2 = .
-  replace recall_prob2 = 0 if TL_E==0
-  replace recall_prob2 = 1 if recall==1 & TL_E==1
-  
-  gen recall_prob3 = .
-  replace recall_prob3 = 0 if JL_E==0
-  replace recall_prob3 = 1 if recall==1 & JL_E==1
-  
-  gen recall_prob4 = .
-  replace recall_prob4 = 0 if UE==0
-  replace recall_prob4 = 1 if recall==1 & UE==1
-  
-  replace recall   = recall * UE
-  
-*  if `i'==2 {
-*    keep if swave<=6
-* drop if (rwkesr2==3 | rwkesr==4) & spell_length>4
-*  }
-  
-  collapse (count) num=recall (mean) unrate recall* UE E_U E_TL E_JL JL_E TL_E, by(ym)
-
-  sum unrate recall_prob2 TL_E JL_E E_TL E_JL
-  pwcorr unrate recall_prob2 TL_E JL_E E_TL E_JL, sig
+* * ------
+* 
+*   use tmpdata/alldata`jobMethod', clear
+*   
+*   
+*   drop TL_E
+*   gen TL_E = .
+*   replace TL_E = 0 if unemp_type==3 & UE==0
+*   replace TL_E = 1 if unemp_type==3 & UE==1
+*   
+*   drop JL_E
+*   gen JL_E = .
+*   replace JL_E = 0 if unemp_type==4 & UE==0
+*   replace JL_E = 1 if unemp_type==4 & UE==1
+*   
+*   
+*   gen recall_prop  = recall
+*   
+*   gen recall_prob2 = .
+*   replace recall_prob2 = 0 if TL_E==0
+*   replace recall_prob2 = 1 if recall==1 & TL_E==1
+*   
+*   gen recall_prob3 = .
+*   replace recall_prob3 = 0 if JL_E==0
+*   replace recall_prob3 = 1 if recall==1 & JL_E==1
+*   
+*   gen recall_prob4 = .
+*   replace recall_prob4 = 0 if UE==0
+*   replace recall_prob4 = 1 if recall==1 & UE==1
+*   
+*   replace recall   = recall * UE
+*   
+* *  if `i'==2 {
+* *    keep if swave<=6
+* * drop if (rwkesr2==3 | rwkesr==4) & spell_length>4
+* *  }
+*   
+*   collapse (count) num=recall (mean) unrate recall* UE E_U E_TL E_JL JL_E TL_E, by(ym)
+* 
+*   sum unrate recall_prob2 TL_E JL_E E_TL E_JL
+*   pwcorr unrate recall_prob2 TL_E JL_E E_TL E_JL, sig
 
 use tmpdata/alldata`jobMethod', clear
 capture frame change default
@@ -272,6 +272,11 @@ gen seam_cross = 1 if (rwkesr2==3 | rwkesr2==4) & spell_length<=4
 replace seam_cross = 0 if srefmonA==3 & srefmonZ==3 & (rwkesr2==3 | rwkesr2==4) & spell_length<=4
 replace seam_cross = 0 if srefmonA==3 & srefmonZ==4 & (rwkesr2==3 | rwkesr2==4) & spell_length<=4
 replace seam_cross = 0 if srefmonA==4 & srefmonZ==4 & (rwkesr2==3 | rwkesr2==4) & spell_length<=4
+
+gen info_lost = 0
+replace info_lost = 1 if rwkesr2==4 & srefmonA==1 & spell_length>=4
+replace info_lost = 1 if rwkesr2==4 & srefmonA==2 & spell_length>=7
+replace info_lost = 1 if rwkesr2==4 & srefmonA==3 & spell_length>=11
 
 *x gen seam_cross = 0 if (rwkesr2==3 | rwkesr2==4) & spell_length<=4
 *x replace seam_cross = 1 if srefmonZ==4 & (rwkesr2==3 | rwkesr2==4) & spell_length<=4
