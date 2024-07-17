@@ -10,6 +10,7 @@ clear all
 
 foreach panel in 96 01 04 08 {
 
+  clear all
   use tmpdata/cw`panel'.dta, clear
   
   
@@ -18,17 +19,17 @@ foreach panel in 96 01 04 08 {
   
   gen undur = (rwkesr2==3 | rwkesr2==4) // unemployed in week 2
   
-  by ID (swave srefmon): gen undur_eu = (undur==1 & (rwkesr2[_n-1]==1|rwkesr2[_n-1]==2)) // E to U
+  by ID (swave srefmon): gen undur_eu = (undur==1 & (rwkesr2[_n-1]==1 | rwkesr2[_n-1]==2)) // E to U
   gen tt = srefmon + (swave-1)*4
   xtset ID tt
   tsfill
 
-  * drop ID's with missing observations
-  count if rwkesr2==.
-  gen single_missing_wave = (rwkesr2==.)
-  by ID, sort: egen missing_waves = total(single_missing_wave)
-  drop if missing_waves>0
-  drop missing_waves single_missing_wave
+*tmp remove! drop ID's with missing observations
+*tmp remove!  count if rwkesr2==.
+*tmp remove!  gen single_missing_wave = (rwkesr2==.)
+*tmp remove!  by ID, sort: egen missing_waves = total(single_missing_wave)
+*tmp remove!  drop if missing_waves>0
+*tmp remove!  drop missing_waves single_missing_wave
   
   * ---------------------------------------------------
   * Compute unemployment duration into "subset`panel'"
@@ -40,7 +41,6 @@ foreach panel in 96 01 04 08 {
   quietly sum tt
   local tmax = r(max)
   reshape wide undur undur_eu, i(ID) j(tt)
-  *
   
   * get unemployment duration for contiguous spells
   sort ID
@@ -69,7 +69,7 @@ foreach panel in 96 01 04 08 {
   frame change subsubset
   drop if undur_eu==.
   collapse (max) undur_eu, by(ID spell_begin spell_end)
-  drop if spell_begin==.
+  * drop if spell_begin==.
   bys ID (spell_begin): gen eu_index = _n
 
   * Put index numbers into main dataset
@@ -81,7 +81,7 @@ foreach panel in 96 01 04 08 {
   * Identify recalls from short samples, in "recall"
   * ----------------------------
   frame change default
-  frames put ID ssuid epppnum tt eeno1 eeno2 tpmsum1 tpmsum2 rwkesr2, into(recall)
+  frames put ID ssuid epppnum tt srefmon eeno1 eeno2 tpmsum1 tpmsum2 rwkesr2, into(recall)
   frame change recall
   sort ID tt
   
@@ -90,6 +90,7 @@ foreach panel in 96 01 04 08 {
   gen jbID2 = eeno2*(tpmsum2!=0)
   replace jbID1=0 if jbID1<0 | jbID1==.
   replace jbID2=0 if jbID2<0 | jbID2==.
+
   gen lngth = 1
 
   * _temporarily_ simplify employment status
@@ -135,7 +136,7 @@ foreach panel in 96 01 04 08 {
   frame change recall
   frlink 1:1 ID spellID tt, frame(status_frm)
   frget indx = indx, from(status_frm)
-  collapse (first) rwkesr2 status jbID1 jbID2 (sum) lngth (min) tt_begin=tt (max) tt_end=tt, by(ID ssuid epppnum indx)
+  collapse (first) rwkesr2 status jbID1 jbID2 (sum) lngth (min) tt_begin=tt (max) tt_end=tt (first) srefmonA=srefmon (last) srefmonZ=srefmon, by(ID ssuid epppnum indx)
 
   sort ID tt_begin
   order ID indx tt_begin tt_end lngth status jbID1 jbID2
@@ -143,10 +144,11 @@ foreach panel in 96 01 04 08 {
 
   * identify EUE's and find recalls
   #delimit;
-  gen EUE = (indx>1 & indx<max_indx 
-    & status=="U" & status[_n-1]=="E" & status[_n+1]=="E");
+  gen EUE = (indx>1 & indx<max_indx & status=="U" & status[_n-1]=="E" & status[_n+1]=="E");
+  gen EUN = (indx>1 & indx<max_indx & status=="U" & status[_n-1]=="E" & status[_n+1]=="N");
   gen recall = .;
   replace recall = 0 if EUE==1;
+  replace recall = 0 if EUN==1;
   bys ID (tt_begin): replace recall = 1 if EUE==1
     & ((jbID1[_n-1]==jbID1[_n+1] & jbID1[_n-1]~=0)
      | (jbID1[_n-1]==jbID2[_n+1] & jbID1[_n-1]~=0)
@@ -160,10 +162,10 @@ foreach panel in 96 01 04 08 {
 
   * data measuring start and end of all EUE spells, and whether it 
   * ends in recall
-  keep if EUE==1
+  keep if EUE==1 | EUN==1
   rename tt_begin spell_begin
   rename rwkesr2 unemp_type
-  keep ID spell_begin recall EUE unemp_type
+  keep ID spell_begin recall EUE EUN unemp_type srefmonA srefmonZ
 
   * merge variables from frame recall to frame subsubset
   * "subsubset" has index of all undur_eu spells with length, link 
@@ -174,7 +176,10 @@ foreach panel in 96 01 04 08 {
   frget recall = recall, from(rlnk)
   frget unemp_type = unemp_type, from(rlnk)
   frget EUE = EUE, from(rlnk)
-  * just done drop if EUE==.
+  frget EUN = EUN, from(rlnk)
+  frget srefmonA = srefmonA, from(rlnk)
+  frget srefmonZ = srefmonZ, from(rlnk)
+  *delete just done drop if EUE==.
 
   
   * merge variables from frame subsubset to frame subset`panel':
@@ -184,6 +189,9 @@ foreach panel in 96 01 04 08 {
   frget recall     = recall, from(subsubset)
   frget unemp_type = unemp_type, from(subsubset)
   frget EUE = EUE, from(subsubset)
+  frget EUN = EUN, from(subsubset)
+  frget srefmonA = srefmonA, from(subsubset)
+  frget srefmonZ = srefmonZ, from(subsubset)
 
   frlink 1:1 ID tt, frame(default)
   frget rwkesr2 = rwkesr2, from(default)
@@ -192,348 +200,352 @@ foreach panel in 96 01 04 08 {
   frget rhcalyr = rhcalyr, from(default)
   frget rhcalmn = rhcalmn, from(default)
   frget lgtwgt = lgtwgt, from(default)
+  frget no_pw = no_pw, from(default)
 
-  * now have full data: identifies EUE spells (by U spell), whether EUE spell 
-  * ends in recall. 
-
-  drop if undur_eu==0 | undur_eu==.  // not unemployment spell
   drop if recall==. // not in dataset of measurable recalls/new-jobs
+  drop if EUE==. & EUN==.
+
+  by ID spell_begin, sort: egen multiple_Ucodes = sd(rwkesr2)
+  replace multiple_Ucodes=. if EUE~=1
+  replace multiple_Ucodes = (multiple_Ucodes>0 & multiple_Ucodes~=.)
 
   save tmpdata/recall`panel'.dta, replace
 
-  * just sum summary stats
-
-  gen UE=.
-  gen TL_E=.
-  gen JL_E=.
-  gen E_U=.
-  gen E_TL=.
-  gen E_JL=.
-
-  bys ID (tt): replace UE = 0 if (rwkesr2==3 | rwkesr2==4)
-  bys ID (tt): replace UE = 1 if (rwkesr2==3 | rwkesr2==4) & (rwkesr2[_n+1]==1 | rwkesr2[_n+1]==2)
-  *
-  bys ID (tt): replace TL_E = 0 if (rwkesr2==3)
-  bys ID (tt): replace TL_E = 1 if (rwkesr2==3) & (rwkesr2[_n+1]==1 | rwkesr2[_n+1]==2)
-  *
-  bys ID (tt): replace JL_E = 0 if (rwkesr2==4)
-  bys ID (tt): replace JL_E = 1 if (rwkesr2==4) & (rwkesr2[_n+1]==1 | rwkesr2[_n+1]==2)
-
-  bys ID (tt): replace E_U = 0 if (rwkesr2==1 | rwkesr2==2)
-  bys ID (tt): replace E_U = 1 if (rwkesr2==1 | rwkesr2==2) & (rwkesr2[_n+1]==3 | rwkesr2[_n+1]==4)
-  *
-  bys ID (tt): replace E_TL = 0 if (rwkesr2==1 | rwkesr2==2)
-  bys ID (tt): replace E_TL = 1 if (rwkesr2==1 | rwkesr2==2) & (rwkesr2[_n+1]==3)
-  *
-  bys ID (tt): replace E_JL = 0 if (rwkesr2==1 | rwkesr2==2)
-  bys ID (tt): replace E_JL = 1 if (rwkesr2==1 | rwkesr2==2) & (rwkesr2[_n+1]==4)
-
-
-  forvalues j=3/4 {
-    if (`j'==3) {
-      di "TL"
-    }
-    else {
-      di "PS"
-    }
-    forvalues i=1/8 {
-      quietly count if recall==1 & unemp_type==`j' & rwkesr2==`j' & spell_end==tt & spell_length==`i' & swave<=6
-      local numer = r(N)
-      quietly count if rwkesr2==`j' & spell_length>=`i' & spell_begin==tt & swave<=6
-      local denom = r(N)
-      local recallP = `numer'/`denom'
-      *
-      quietly count if recall==0 & unemp_type==`j' & rwkesr2==`j' & spell_end==tt & spell_length==`i' & swave<=6
-      local numer = r(N)
-      quietly count if rwkesr2==`j' & spell_length>=`i' & spell_begin==tt & swave<=6
-      local denom = r(N)
-      local hireP = `numer'/`denom'
-      di "year is `panel', t=`i', `recallP', `hireP'" 
-    }
-  }
-  forvalues j=3/4 {
-    if (`j'==3) {
-      di "TL"
-    }
-    else {
-      di "PS"
-    }
-    forvalues i=1/8 {
-      quietly count if recall==1 & unemp_type==`j' & spell_end==tt & spell_length==`i' & swave<=6
-      local numer = r(N)
-      quietly count if unemp_type==`j' & spell_length>=`i' & spell_begin==tt & swave<=6
-      local denom = r(N)
-      local recallP = `numer'/`denom'
-      *
-      quietly count if recall==0 & unemp_type==`j' & spell_end==tt & spell_length==`i' & swave<=6
-      local numer = r(N)
-      quietly count if unemp_type==`j' & spell_length>=`i' & spell_begin==tt & swave<=6
-      local denom = r(N)
-      local hireP = `numer'/`denom'
-      di "year is `panel', t=`i', `recallP', `hireP'" 
-    }
-  }
-
-  tab E_U E_TL if swave<=6, row
-  tab recall if UE==1 & swave<=6 // condition on observing EUE?
-
-  tab srefmon UE if swave<=6, col
-  tab srefmon UE if swave<=6 & rwkesr2==3, col
-  tab srefmon UE if swave<=6 & rwkesr2==4, col
-  sum spell_length if undur_eu>0 & recall==1 & tt==spell_begin, d
-  sum spell_length if undur_eu>0 & recall==0 & tt==spell_begin, d
-  sum spell_length if undur_eu>0 & rwkesr2==3 & tt==spell_begin, d
-  sum spell_length if undur_eu>0 & rwkesr2==4 & tt==spell_begin, d
-
-  sum spell_length if undur_eu>0 & rwkesr2==3 & recall==0 & tt==spell_begin, d
-  sum spell_length if undur_eu>0 & rwkesr2==3 & recall==1 & tt==spell_begin, d
-  sum spell_length if undur_eu>0 & rwkesr2==4 & recall==0 & tt==spell_begin, d
-  sum spell_length if undur_eu>0 & rwkesr2==4 & recall==1 & tt==spell_begin, d
-
-
-  tab spell_length rwkesr2 if undur_eu>0 & tt==spell_begin
-  tab spell_length rwkesr2 if spell_length<=4 & undur_eu>0 & tt==spell_begin & recall==1, col
-
-  * look at seam effect
-  gen loss_month_tmp=0 
-  replace loss_month_tmp = srefmon if spell_begin==tt
-  by ID eu_index, sort: egen loss_month = max(loss_month_tmp)
-  forvalues irefmth = 1/4 {
-    forvalues j=3/4 {
-      if (`j'==3) {
-        di "TL"
-      }
-      else {
-        di "PS"
-      }
-      forvalues i=1/8 {
-        quietly count if recall==1 & rwkesr2==`j' & spell_end==tt & spell_length==`i' & swave<=6 & loss_month==`irefmth'
-        local numer = r(N)
-        quietly count if rwkesr2==`j' & spell_length>=`i' & spell_begin==tt & swave<=6 & loss_month==`irefmth'
-        local denom = r(N)
-        local recallP = `numer'/`denom'
-        *
-        quietly count if recall==0 & rwkesr2==`j' & spell_end==tt & spell_length==`i' & swave<=6 & loss_month==`irefmth'
-        local numer = r(N)
-        quietly count if rwkesr2==`j' & spell_length>=`i' & spell_begin==tt & swave<=6 & loss_month==`irefmth'
-        local denom = r(N)
-        local hireP = `numer'/`denom'
-        di "year is `panel', t=`i', `recallP', `hireP', srefmon = `irefmth'" 
-      }
-    }
-  }
-  * seam effect!
-
-  clear all
 }
 
-
-
-* dflkj
-* 
-* }
-* 
-* 
-* foreach panel in 96 01 04 08 {
-* frame change subset`panel'
-* gen spanel = panel
-* sort f
-* 
-* year is 01, t=1, .3388400702987698, .1096660808435852
-* year is 01, t=2, .2628294036061026, .0908460471567268
-* year is 01, t=3, .1988372093023256, .077906976744186
-* year is 01, t=4, .2099827882960413, .1222030981067126
-* 
-* 
-* * fraction of ET/EU should be lower in SIPP
-* * actual recalls should go down.
-* 
-* * look at fraction of TL finding a job within 4 months. Should be HIGHER fraction of temporary-layoffs, but lower fraction of total unemployed.
-* * gen TL_lt_4 = (rwkesr2==3 & spell_begin==tt & swave<=6 & spell_length<=4)
-* *tab TL_lt_4 if rwkesr2==3 & spell_begin==tt & swave<=6 & spell_length<=4
-* 
-* *   dflkj
-* * 
-* *   frame change default
-* *   drop undur_eu
-* *   frlink 1:1 ID tt, frame(subset`panel') gen(slnk)
-* *   frget recall       = recall, from(slnk)
-* *   frget spell_begin  = spell_begin, from(slnk)
-* *   frget spell_end    = spell_end, from(slnk)
-* *   frget spell_length = spell_length, from(slnk)
-* *   frget undur_eu     = undur_eu, from(slnk)
-* *   bys ID (tt): gen UE = (rwkesr2==3 | rwkesr2==4) & (rwkesr2[_n+1]==1 | rwkesr2[_n+1]==2)
-* * 
-* *   
-* * dflkj
-* * 
-* * 
-* *   dflkj
-* *   frlink m:1 ID spell_begin, frame(recall) gen(rlnk)
-* *   frget recall = recall, from(rlnk)
-* *   dflkj
-* *   
-* *   fr
-* * 
-* *      
-* * 
-* *   #delimit;
-* *   replace recall_GHT = 1 if ((jbID1==jbID1[_n+1+`ii'] & jbID1~=0) |
-* *     (jbID1==jbID2[_n+1+`ii'] & jbID1~=0) |
-* *     (jbID2==jbID1[_n+1+`ii'] & jbID2~=0) |
-* *     (jbID2==jbID2[_n+1+`ii'] & jbID2~=0)) 
-* *     & undur_eu[_n+1]==1 & spell_length[_n+`ii']==`ii' & undur_eu[_n+`ii'+1]==0
-* *     & (rwkesr2==1 | rwkesr2==2)
-* *     & (rwkesr2[_n+1+`ii']==1 | rwkesr2[_n+1+`ii']==2);
-* *   #delimit cr
-* *   
-* *   
-* *   
-* *   
-* *   capture drop recall_GHT
-* *   
-* *   gen recall_GHT = 0
-* * 
-* *   quietly sum tt
-* *   local tmax = r(max)
-* *   forvalues ii=1/9 {
-* *   
-* *     #delimit;
-* *     replace recall_GHT = 1 if ((jbID1==jbID1[_n+1+`ii'] & jbID1~=0) |
-* *       (jbID1==jbID2[_n+1+`ii'] & jbID1~=0) |
-* *       (jbID2==jbID1[_n+1+`ii'] & jbID2~=0) |
-* *       (jbID2==jbID2[_n+1+`ii'] & jbID2~=0)) 
-* *       & undur_eu[_n+1]==1 & spell_length[_n+`ii']==`ii' & undur_eu[_n+`ii'+1]==0
-* *       & (rwkesr2==1 | rwkesr2==2)
-* *       & (rwkesr2[_n+1+`ii']==1 | rwkesr2[_n+1+`ii']==2);
-* *     #delimit cr
-* * 
-* *   }
-* *   
-* * *  sort ssuid eentaid epppnum swave srefmon
-* * *  *merge 1:1 ssuid eentaid epppnum swave srefmon using FMrecalls.dta
-* * *  sort ID eeno1
-* * *  merge m:1 ID eeno1 using ./rawdata/jobs1_`panel'.dta
-* * *  tab _merge
-* * *  drop _merge
-* * *  *
-* * *  sort ID eeno2
-* * *  merge m:1 ID eeno1 using ./rawdata/jobs2_`panel'.dta
-* * *  tab _merge
-* * *  drop _merge
-* *   
-* * *  frlink m:1 ID job, frame(jobs)
-* * *  frget end_date = end_date, from(jobs)
-* * *  frget last_tt = last_tt, from(jobs)
-* * *  frget start_date = start_date, from(jobs)
-* * *  frget first_tt = first_tt, from(jobs)
-* *   
-* *   by ID (tt), sort: gen F1spell_length = spell_length[_n+1]
-* *   
-* *   forvalues i=1/10 {
-* *     capture drop F`i'rwkesr2
-* *     
-* *     bys ID (tt): gen F`i'rwkesr2 = rwkesr2[_n+`i']
-* *     bys ID (tt): gen F`i'emp = (F`i'rwkesr2==1 | F`i'rwkesr2==2)
-* *   }
-* *   
-* *   
-* *   tab recall_GHT F1rwkesr2 if F1spell_length<=3 & (rwkesr2==1 | rwkesr2==2), col
-* *   save ./tmpdata/extract`panel'.dta, replace
-* *   
-* *   keep ID recall_GHT /*recallFM*/ rwkesr2 F1rwkesr2 F1spell_length F*rwkesr2 srot swave rwkesr* F*emp srefmon
-* *   keep if (rwkesr2==1 | rwkesr2==2) & F1spell_length~=0 & F1spell_length~=.
-* *   
-* *   gen TL = (F1rwkesr2==3)
-* *   gen PS = (F1rwkesr2==4)
-* * 
-* *   gen TL_m1 = (F1rwkesr2==3 & srefmon==1)
-* *   gen PS_m1 = (F1rwkesr2==4 & srefmon==1)
-* * 
-* *   *save this.dta, replace ("ne" durations)
-* *   *save that.dta, replace
-* *   } // quietly done
-* * 
-* *   tab recall_GHT F1rwkesr2 if F1spell_length==1
-* *   forvalues j=3/4 {
-* *     if (`j'==3) {
-* *       di "PS"
-* *     }
-* *     else {
-* *       di "TL"
-* *     }
-* *     forvalues i=1/8 {
-* *       quietly count if recall_GHT==1 & F1rwkesr2==`j' & F1spell_length==`i' & swave<=6
-* *       local numer = r(N)
-* *       quietly count if F1rwkesr2==`j' & F1spell_length>=`i' & swave<=6
-* *       local denom = r(N)
-* *       local recallP = `numer'/`denom'
-* *       *
-* *       quietly count if recall_GHT==0 & F1rwkesr2==`j' & F1spell_length==`i' & swave<=6
-* *       local numer = r(N)
-* *       quietly count if F1rwkesr2==`j' & F1spell_length>=`i' & swave<=6
-* *       local denom = r(N)
-* *       local recallP = `numer'/`denom'
-* *       di "year is `panel', t=`i', `rate'" 
-* *     }
-* *   }
-* * 
-* * 
-* * } //loop done
-* * dflkj
-* *   
-* *   
-* *   *good * checking for seam effect!
-* *   *good forvalues i=1/2 {
-* *   *good   di "`i'"
-* *   *good   reg recall_GHT PS TL if srefmon<4-`i' & F1spell_length==`i' & (rwkesr2==1 | rwkesr2==2), hascons
-* *   *good   reg recall_GHT PS TL if srefmon>4-`i' & F1spell_length==`i' & (rwkesr2==1 | rwkesr2==2), hascons
-* *   *good }
-* * 
-* *   reg recall_GHT PS TL if F1spell_length<=4 & (rwkesr2==1 | rwkesr2==2) & swave<=6, hascons
-* *   
-* *   * all of them
-* *   forvalues i=1/4 {
-* *     di "`i'"
-* *     reg recall_GHT PS TL if F1spell_length==`i' & (rwkesr2==1 | rwkesr2==2), hascons
-* *   }
-* *   reg recall_GHT PS TL if F1spell_length<=4 & (rwkesr2==1 | rwkesr2==2) & swave<=6, hascons
-* *   reg recall_GHT PS TL if F1spell_length>1 & F1spell_length<=4 & (rwkesr2==1 | rwkesr2==2) & swave<=6, hascons
-* *   
-* *   reg recall_GHT PS TL if F1spell_length<=4 & (rwkesr2==1 | rwkesr2==2) & swave<=6, hascons
-* *   reg recall_GHT PS TL if F1spell_length>1 & F1spell_length<=4 & (rwkesr2==1 | rwkesr2==2) & swave<=6, hascons
-* *   reg recall_GHT PS TL if F1spell_length>1 & F1spell_length<=4 & (rwkesr2==1 | rwkesr2==2) & swave<=6, hascons
-* * *  reg recallFM PS TL if F1spell_length<=4 & (rwkesr2==1 | rwkesr2==2) & swave<=6, hascons
-* *   
-* *   forvalues i=1/9 {
-* *   
-* *     local j=`i'+1
-* *     replace F`j'rwkesr2=. if (F`i'rwkesr2 == 1 | F`i'rwkesr2 == 2 | F`i'rwkesr2==.)
-* *     replace F`i'rwkesr2 = 0 if (F`i'rwkesr2 == 1 | F`i'rwkesr2 == 2) & recall_GHT==1
-* *   
-* *     di "`i'"
-* *     tab F`i'rwkesr2 F`j'rwkesr2, row
-* *     tab F`i'rwkesr2 F`j'emp, row
-* *   
-* *   }
-* *   
-* *   forvalues i=1/9 {
-* *   
-* *     local j=`i'+1
-* *   
-* *     di "`i'"
-* *     tab F`i'rwkesr2 F`j'rwkesr2 if (F`i'rwkesr2==3 | F`i'rwkesr2==4) , row
-* *   
-* *   }
-* *   
-* *   forvalues i=1/9 {
-* *   
-* *     local j=`i'+1
-* *   
-* *     di "`i'"
-* *     tab F`i'rwkesr2 F`j'emp if (F`i'rwkesr2==3 | F`i'rwkesr2==4), row
-* *   
-* *   }
-* * 
-* * }
-* * * seam bias!
+* delete all  * just sum summary stats
+* delete all
+* delete all  gen UE=.
+* delete all  gen TL_E=.
+* delete all  gen JL_E=.
+* delete all  gen E_U=.
+* delete all  gen E_TL=.
+* delete all  gen E_JL=.
+* delete all
+* delete all  bys ID (tt): replace UE = 0 if (rwkesr2==3 | rwkesr2==4)
+* delete all  bys ID (tt): replace UE = 1 if (rwkesr2==3 | rwkesr2==4) & (rwkesr2[_n+1]==1 | rwkesr2[_n+1]==2)
+* delete all  *
+* delete all  bys ID (tt): replace TL_E = 0 if (rwkesr2==3)
+* delete all  bys ID (tt): replace TL_E = 1 if (rwkesr2==3) & (rwkesr2[_n+1]==1 | rwkesr2[_n+1]==2)
+* delete all  *
+* delete all  bys ID (tt): replace JL_E = 0 if (rwkesr2==4)
+* delete all  bys ID (tt): replace JL_E = 1 if (rwkesr2==4) & (rwkesr2[_n+1]==1 | rwkesr2[_n+1]==2)
+* delete all
+* delete all  bys ID (tt): replace E_U = 0 if (rwkesr2==1 | rwkesr2==2)
+* delete all  bys ID (tt): replace E_U = 1 if (rwkesr2==1 | rwkesr2==2) & (rwkesr2[_n+1]==3 | rwkesr2[_n+1]==4)
+* delete all  *
+* delete all  bys ID (tt): replace E_TL = 0 if (rwkesr2==1 | rwkesr2==2)
+* delete all  bys ID (tt): replace E_TL = 1 if (rwkesr2==1 | rwkesr2==2) & (rwkesr2[_n+1]==3)
+* delete all  *
+* delete all  bys ID (tt): replace E_JL = 0 if (rwkesr2==1 | rwkesr2==2)
+* delete all  bys ID (tt): replace E_JL = 1 if (rwkesr2==1 | rwkesr2==2) & (rwkesr2[_n+1]==4)
+* delete all
+* delete all
+* delete all  forvalues j=3/4 {
+* delete all    if (`j'==3) {
+* delete all      di "TL"
+* delete all    }
+* delete all    else {
+* delete all      di "PS"
+* delete all    }
+* delete all    forvalues i=1/8 {
+* delete all      quietly count if recall==1 & unemp_type==`j' & rwkesr2==`j' & spell_end==tt & spell_length==`i' & swave<=6
+* delete all      local numer = r(N)
+* delete all      quietly count if rwkesr2==`j' & spell_length>=`i' & spell_begin==tt & swave<=6
+* delete all      local denom = r(N)
+* delete all      local recallP = `numer'/`denom'
+* delete all      *
+* delete all      quietly count if recall==0 & unemp_type==`j' & rwkesr2==`j' & spell_end==tt & spell_length==`i' & swave<=6
+* delete all      local numer = r(N)
+* delete all      quietly count if rwkesr2==`j' & spell_length>=`i' & spell_begin==tt & swave<=6
+* delete all      local denom = r(N)
+* delete all      local hireP = `numer'/`denom'
+* delete all      di "year is `panel', t=`i', `recallP', `hireP'" 
+* delete all    }
+* delete all  }
+* delete all  forvalues j=3/4 {
+* delete all    if (`j'==3) {
+* delete all      di "TL"
+* delete all    }
+* delete all    else {
+* delete all      di "PS"
+* delete all    }
+* delete all    forvalues i=1/8 {
+* delete all      quietly count if recall==1 & unemp_type==`j' & spell_end==tt & spell_length==`i' & swave<=6
+* delete all      local numer = r(N)
+* delete all      quietly count if unemp_type==`j' & spell_length>=`i' & spell_begin==tt & swave<=6
+* delete all      local denom = r(N)
+* delete all      local recallP = `numer'/`denom'
+* delete all      *
+* delete all      quietly count if recall==0 & unemp_type==`j' & spell_end==tt & spell_length==`i' & swave<=6
+* delete all      local numer = r(N)
+* delete all      quietly count if unemp_type==`j' & spell_length>=`i' & spell_begin==tt & swave<=6
+* delete all      local denom = r(N)
+* delete all      local hireP = `numer'/`denom'
+* delete all      di "year is `panel', t=`i', `recallP', `hireP'" 
+* delete all    }
+* delete all  }
+* delete all
+* delete all  tab E_U E_TL if swave<=6, row
+* delete all  tab recall if UE==1 & swave<=6 // condition on observing EUE?
+* delete all
+* delete all  tab srefmon UE if swave<=6, col
+* delete all  tab srefmon UE if swave<=6 & rwkesr2==3, col
+* delete all  tab srefmon UE if swave<=6 & rwkesr2==4, col
+* delete all  sum spell_length if undur_eu>0 & recall==1 & tt==spell_begin, d
+* delete all  sum spell_length if undur_eu>0 & recall==0 & tt==spell_begin, d
+* delete all  sum spell_length if undur_eu>0 & rwkesr2==3 & tt==spell_begin, d
+* delete all  sum spell_length if undur_eu>0 & rwkesr2==4 & tt==spell_begin, d
+* delete all
+* delete all  sum spell_length if undur_eu>0 & rwkesr2==3 & recall==0 & tt==spell_begin, d
+* delete all  sum spell_length if undur_eu>0 & rwkesr2==3 & recall==1 & tt==spell_begin, d
+* delete all  sum spell_length if undur_eu>0 & rwkesr2==4 & recall==0 & tt==spell_begin, d
+* delete all  sum spell_length if undur_eu>0 & rwkesr2==4 & recall==1 & tt==spell_begin, d
+* delete all
+* delete all
+* delete all  tab spell_length rwkesr2 if undur_eu>0 & tt==spell_begin
+* delete all  tab spell_length rwkesr2 if spell_length<=4 & undur_eu>0 & tt==spell_begin & recall==1, col
+* delete all
+* delete all  * look at seam effect
+* delete all  gen loss_month_tmp=0 
+* delete all  replace loss_month_tmp = srefmon if spell_begin==tt
+* delete all  by ID eu_index, sort: egen loss_month = max(loss_month_tmp)
+* delete all  forvalues irefmth = 1/4 {
+* delete all    forvalues j=3/4 {
+* delete all      if (`j'==3) {
+* delete all        di "TL"
+* delete all      }
+* delete all      else {
+* delete all        di "PS"
+* delete all      }
+* delete all      forvalues i=1/8 {
+* delete all        quietly count if recall==1 & rwkesr2==`j' & spell_end==tt & spell_length==`i' & swave<=6 & loss_month==`irefmth'
+* delete all        local numer = r(N)
+* delete all        quietly count if rwkesr2==`j' & spell_length>=`i' & spell_begin==tt & swave<=6 & loss_month==`irefmth'
+* delete all        local denom = r(N)
+* delete all        local recallP = `numer'/`denom'
+* delete all        *
+* delete all        quietly count if recall==0 & rwkesr2==`j' & spell_end==tt & spell_length==`i' & swave<=6 & loss_month==`irefmth'
+* delete all        local numer = r(N)
+* delete all        quietly count if rwkesr2==`j' & spell_length>=`i' & spell_begin==tt & swave<=6 & loss_month==`irefmth'
+* delete all        local denom = r(N)
+* delete all        local hireP = `numer'/`denom'
+* delete all        di "year is `panel', t=`i', `recallP', `hireP', srefmon = `irefmth'" 
+* delete all      }
+* delete all    }
+* delete all  }
+* delete all  * seam effect!
+* delete all
+* delete all  clear all
+* delete all}
+* delete all
+* delete all
+* delete all
+* delete all* dflkj
+* delete all* 
+* delete all* }
+* delete all* 
+* delete all* 
+* delete all* foreach panel in 96 01 04 08 {
+* delete all* frame change subset`panel'
+* delete all* gen spanel = panel
+* delete all* sort f
+* delete all* 
+* delete all* year is 01, t=1, .3388400702987698, .1096660808435852
+* delete all* year is 01, t=2, .2628294036061026, .0908460471567268
+* delete all* year is 01, t=3, .1988372093023256, .077906976744186
+* delete all* year is 01, t=4, .2099827882960413, .1222030981067126
+* delete all* 
+* delete all* 
+* delete all* * fraction of ET/EU should be lower in SIPP
+* delete all* * actual recalls should go down.
+* delete all* 
+* delete all* * look at fraction of TL finding a job within 4 months. Should be HIGHER fraction of temporary-layoffs, but lower fraction of total unemployed.
+* delete all* * gen TL_lt_4 = (rwkesr2==3 & spell_begin==tt & swave<=6 & spell_length<=4)
+* delete all* *tab TL_lt_4 if rwkesr2==3 & spell_begin==tt & swave<=6 & spell_length<=4
+* delete all* 
+* delete all* *   dflkj
+* delete all* * 
+* delete all* *   frame change default
+* delete all* *   drop undur_eu
+* delete all* *   frlink 1:1 ID tt, frame(subset`panel') gen(slnk)
+* delete all* *   frget recall       = recall, from(slnk)
+* delete all* *   frget spell_begin  = spell_begin, from(slnk)
+* delete all* *   frget spell_end    = spell_end, from(slnk)
+* delete all* *   frget spell_length = spell_length, from(slnk)
+* delete all* *   frget undur_eu     = undur_eu, from(slnk)
+* delete all* *   bys ID (tt): gen UE = (rwkesr2==3 | rwkesr2==4) & (rwkesr2[_n+1]==1 | rwkesr2[_n+1]==2)
+* delete all* * 
+* delete all* *   
+* delete all* * dflkj
+* delete all* * 
+* delete all* * 
+* delete all* *   dflkj
+* delete all* *   frlink m:1 ID spell_begin, frame(recall) gen(rlnk)
+* delete all* *   frget recall = recall, from(rlnk)
+* delete all* *   dflkj
+* delete all* *   
+* delete all* *   fr
+* delete all* * 
+* delete all* *      
+* delete all* * 
+* delete all* *   #delimit;
+* delete all* *   replace recall_GHT = 1 if ((jbID1==jbID1[_n+1+`ii'] & jbID1~=0) |
+* delete all* *     (jbID1==jbID2[_n+1+`ii'] & jbID1~=0) |
+* delete all* *     (jbID2==jbID1[_n+1+`ii'] & jbID2~=0) |
+* delete all* *     (jbID2==jbID2[_n+1+`ii'] & jbID2~=0)) 
+* delete all* *     & undur_eu[_n+1]==1 & spell_length[_n+`ii']==`ii' & undur_eu[_n+`ii'+1]==0
+* delete all* *     & (rwkesr2==1 | rwkesr2==2)
+* delete all* *     & (rwkesr2[_n+1+`ii']==1 | rwkesr2[_n+1+`ii']==2);
+* delete all* *   #delimit cr
+* delete all* *   
+* delete all* *   
+* delete all* *   
+* delete all* *   
+* delete all* *   capture drop recall_GHT
+* delete all* *   
+* delete all* *   gen recall_GHT = 0
+* delete all* * 
+* delete all* *   quietly sum tt
+* delete all* *   local tmax = r(max)
+* delete all* *   forvalues ii=1/9 {
+* delete all* *   
+* delete all* *     #delimit;
+* delete all* *     replace recall_GHT = 1 if ((jbID1==jbID1[_n+1+`ii'] & jbID1~=0) |
+* delete all* *       (jbID1==jbID2[_n+1+`ii'] & jbID1~=0) |
+* delete all* *       (jbID2==jbID1[_n+1+`ii'] & jbID2~=0) |
+* delete all* *       (jbID2==jbID2[_n+1+`ii'] & jbID2~=0)) 
+* delete all* *       & undur_eu[_n+1]==1 & spell_length[_n+`ii']==`ii' & undur_eu[_n+`ii'+1]==0
+* delete all* *       & (rwkesr2==1 | rwkesr2==2)
+* delete all* *       & (rwkesr2[_n+1+`ii']==1 | rwkesr2[_n+1+`ii']==2);
+* delete all* *     #delimit cr
+* delete all* * 
+* delete all* *   }
+* delete all* *   
+* delete all* * *  sort ssuid eentaid epppnum swave srefmon
+* delete all* * *  *merge 1:1 ssuid eentaid epppnum swave srefmon using FMrecalls.dta
+* delete all* * *  sort ID eeno1
+* delete all* * *  merge m:1 ID eeno1 using ./rawdata/jobs1_`panel'.dta
+* delete all* * *  tab _merge
+* delete all* * *  drop _merge
+* delete all* * *  *
+* delete all* * *  sort ID eeno2
+* delete all* * *  merge m:1 ID eeno1 using ./rawdata/jobs2_`panel'.dta
+* delete all* * *  tab _merge
+* delete all* * *  drop _merge
+* delete all* *   
+* delete all* * *  frlink m:1 ID job, frame(jobs)
+* delete all* * *  frget end_date = end_date, from(jobs)
+* delete all* * *  frget last_tt = last_tt, from(jobs)
+* delete all* * *  frget start_date = start_date, from(jobs)
+* delete all* * *  frget first_tt = first_tt, from(jobs)
+* delete all* *   
+* delete all* *   by ID (tt), sort: gen F1spell_length = spell_length[_n+1]
+* delete all* *   
+* delete all* *   forvalues i=1/10 {
+* delete all* *     capture drop F`i'rwkesr2
+* delete all* *     
+* delete all* *     bys ID (tt): gen F`i'rwkesr2 = rwkesr2[_n+`i']
+* delete all* *     bys ID (tt): gen F`i'emp = (F`i'rwkesr2==1 | F`i'rwkesr2==2)
+* delete all* *   }
+* delete all* *   
+* delete all* *   
+* delete all* *   tab recall_GHT F1rwkesr2 if F1spell_length<=3 & (rwkesr2==1 | rwkesr2==2), col
+* delete all* *   save ./tmpdata/extract`panel'.dta, replace
+* delete all* *   
+* delete all* *   keep ID recall_GHT /*recallFM*/ rwkesr2 F1rwkesr2 F1spell_length F*rwkesr2 srot swave rwkesr* F*emp srefmon
+* delete all* *   keep if (rwkesr2==1 | rwkesr2==2) & F1spell_length~=0 & F1spell_length~=.
+* delete all* *   
+* delete all* *   gen TL = (F1rwkesr2==3)
+* delete all* *   gen PS = (F1rwkesr2==4)
+* delete all* * 
+* delete all* *   gen TL_m1 = (F1rwkesr2==3 & srefmon==1)
+* delete all* *   gen PS_m1 = (F1rwkesr2==4 & srefmon==1)
+* delete all* * 
+* delete all* *   *save this.dta, replace ("ne" durations)
+* delete all* *   *save that.dta, replace
+* delete all* *   } // quietly done
+* delete all* * 
+* delete all* *   tab recall_GHT F1rwkesr2 if F1spell_length==1
+* delete all* *   forvalues j=3/4 {
+* delete all* *     if (`j'==3) {
+* delete all* *       di "PS"
+* delete all* *     }
+* delete all* *     else {
+* delete all* *       di "TL"
+* delete all* *     }
+* delete all* *     forvalues i=1/8 {
+* delete all* *       quietly count if recall_GHT==1 & F1rwkesr2==`j' & F1spell_length==`i' & swave<=6
+* delete all* *       local numer = r(N)
+* delete all* *       quietly count if F1rwkesr2==`j' & F1spell_length>=`i' & swave<=6
+* delete all* *       local denom = r(N)
+* delete all* *       local recallP = `numer'/`denom'
+* delete all* *       *
+* delete all* *       quietly count if recall_GHT==0 & F1rwkesr2==`j' & F1spell_length==`i' & swave<=6
+* delete all* *       local numer = r(N)
+* delete all* *       quietly count if F1rwkesr2==`j' & F1spell_length>=`i' & swave<=6
+* delete all* *       local denom = r(N)
+* delete all* *       local recallP = `numer'/`denom'
+* delete all* *       di "year is `panel', t=`i', `rate'" 
+* delete all* *     }
+* delete all* *   }
+* delete all* * 
+* delete all* * 
+* delete all* * } //loop done
+* delete all* * dflkj
+* delete all* *   
+* delete all* *   
+* delete all* *   *good * checking for seam effect!
+* delete all* *   *good forvalues i=1/2 {
+* delete all* *   *good   di "`i'"
+* delete all* *   *good   reg recall_GHT PS TL if srefmon<4-`i' & F1spell_length==`i' & (rwkesr2==1 | rwkesr2==2), hascons
+* delete all* *   *good   reg recall_GHT PS TL if srefmon>4-`i' & F1spell_length==`i' & (rwkesr2==1 | rwkesr2==2), hascons
+* delete all* *   *good }
+* delete all* * 
+* delete all* *   reg recall_GHT PS TL if F1spell_length<=4 & (rwkesr2==1 | rwkesr2==2) & swave<=6, hascons
+* delete all* *   
+* delete all* *   * all of them
+* delete all* *   forvalues i=1/4 {
+* delete all* *     di "`i'"
+* delete all* *     reg recall_GHT PS TL if F1spell_length==`i' & (rwkesr2==1 | rwkesr2==2), hascons
+* delete all* *   }
+* delete all* *   reg recall_GHT PS TL if F1spell_length<=4 & (rwkesr2==1 | rwkesr2==2) & swave<=6, hascons
+* delete all* *   reg recall_GHT PS TL if F1spell_length>1 & F1spell_length<=4 & (rwkesr2==1 | rwkesr2==2) & swave<=6, hascons
+* delete all* *   
+* delete all* *   reg recall_GHT PS TL if F1spell_length<=4 & (rwkesr2==1 | rwkesr2==2) & swave<=6, hascons
+* delete all* *   reg recall_GHT PS TL if F1spell_length>1 & F1spell_length<=4 & (rwkesr2==1 | rwkesr2==2) & swave<=6, hascons
+* delete all* *   reg recall_GHT PS TL if F1spell_length>1 & F1spell_length<=4 & (rwkesr2==1 | rwkesr2==2) & swave<=6, hascons
+* delete all* * *  reg recallFM PS TL if F1spell_length<=4 & (rwkesr2==1 | rwkesr2==2) & swave<=6, hascons
+* delete all* *   
+* delete all* *   forvalues i=1/9 {
+* delete all* *   
+* delete all* *     local j=`i'+1
+* delete all* *     replace F`j'rwkesr2=. if (F`i'rwkesr2 == 1 | F`i'rwkesr2 == 2 | F`i'rwkesr2==.)
+* delete all* *     replace F`i'rwkesr2 = 0 if (F`i'rwkesr2 == 1 | F`i'rwkesr2 == 2) & recall_GHT==1
+* delete all* *   
+* delete all* *     di "`i'"
+* delete all* *     tab F`i'rwkesr2 F`j'rwkesr2, row
+* delete all* *     tab F`i'rwkesr2 F`j'emp, row
+* delete all* *   
+* delete all* *   }
+* delete all* *   
+* delete all* *   forvalues i=1/9 {
+* delete all* *   
+* delete all* *     local j=`i'+1
+* delete all* *   
+* delete all* *     di "`i'"
+* delete all* *     tab F`i'rwkesr2 F`j'rwkesr2 if (F`i'rwkesr2==3 | F`i'rwkesr2==4) , row
+* delete all* *   
+* delete all* *   }
+* delete all* *   
+* delete all* *   forvalues i=1/9 {
+* delete all* *   
+* delete all* *     local j=`i'+1
+* delete all* *   
+* delete all* *     di "`i'"
+* delete all* *     tab F`i'rwkesr2 F`j'emp if (F`i'rwkesr2==3 | F`i'rwkesr2==4), row
+* delete all* *   
+* delete all* *   }
+* delete all* * 
+* delete all* * }
+* delete all* * * seam bias!

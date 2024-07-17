@@ -29,7 +29,7 @@ classdef figures
                 waves(i).FaceColor = custom_colors{i};
             end
             if (legend_status==1)
-              legend_here = legend({'1996' '2001', '2004', '2008'}, 'interpreter','Latex')
+              legend_here = legend({'','1996' '2001', '2004', '2008'}, 'interpreter','Latex')
               set(legend_here,...
                   'Position',[0.369536658236855 0.0321433263072406 0.286400367736816 0.0167365270460437],...
                   'Orientation','horizontal',...
@@ -39,7 +39,8 @@ classdef figures
             hold on;
             plot(average_data.duration, average_data.(which_probability), '-ks', 'HandleVisibility', 'off',...
               'LineWidth', 2, 'MarkerSize', 10)
-            xlabel("Months", 'interpreter','Latex')
+            xlabel("Elapsed months of unemployment", 'interpreter','Latex')
+            xticks([1:1:8])
 %            if which_probability=="pR"
 %
 %              if which_rwkesr2==3
@@ -86,7 +87,7 @@ classdef figures
             grid on;
             plot(use_data.duration, use_data.(which_probability), '-ks', 'HandleVisibility', 'off',...
               'LineWidth', 2, 'MarkerSize', 10)
-            xlabel("Months", 'interpreter','Latex')
+            xlabel("Elapsed months of unemployment", 'interpreter','Latex')
             xlim([0.5,8.5])
             xticks([1:1:8])
             xtickangle(0)

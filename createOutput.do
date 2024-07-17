@@ -1,85 +1,24 @@
-* local jobMethod="alt"
-local jobMethod=""
-* 
-* clear all
-* set fredkey 74348ccf8d0c8e4873861aa692a29323
-* import fred unrate
-* drop daten
-* sort datestr
-* 
-* gen date = substr(datestr,1,4)+substr(datestr,6,2)
-* gen year = substr(datestr,1,4)
-* gen month = substr(datestr,6,2)
-* 
-* destring date, replace
-* destring year, replace
-* destring month, replace
-* gen ym = ym(year,month)
-* format %tm ym
-* sort ym
-* rename UNRATE unrate
-* save tmpdata/unrate, replace
-
-
-use tmpdata/recall96`jobMethod'.dta, clear
+use tmpdata/recall96.dta, clear
 gen spanel = 1996
 foreach panel in 01 04 08 {
-  append using tmpdata/recall`panel'`jobMethod'.dta
+  append using tmpdata/recall`panel'.dta
   replace spanel = 2000+`panel' if spanel==.
 }
 gen ym = ym(rhcalyr, rhcalmn)
 format %tm ym
 
-* sort ym
-* merge m:1 ym using tmpdata/unrate
-* assert (_merge==1 & no_pw~=1) | _merge==2 | _merge==3
-* keep if _merge==3
+drop if EUE==. & EUN==. 
 
-save tmpdata/alldata`jobMethod', replace
+capture drop job_info_lost
+gen job_info_lost = 0
+replace job_info_lost = 1 if rwkesr2==4 & srefmonA==1 & spell_length>=4
+replace job_info_lost = 1 if rwkesr2==4 & srefmonA==2 & spell_length>=5
+replace job_info_lost = 1 if rwkesr2==4 & srefmonA==3 & spell_length>=6
+replace job_info_lost = 1 if rwkesr2==4 & srefmonA==4 & spell_length>=7
 
-* * ------
-* 
-*   use tmpdata/alldata`jobMethod', clear
-*   
-*   
-*   drop TL_E
-*   gen TL_E = .
-*   replace TL_E = 0 if unemp_type==3 & UE==0
-*   replace TL_E = 1 if unemp_type==3 & UE==1
-*   
-*   drop JL_E
-*   gen JL_E = .
-*   replace JL_E = 0 if unemp_type==4 & UE==0
-*   replace JL_E = 1 if unemp_type==4 & UE==1
-*   
-*   
-*   gen recall_prop  = recall
-*   
-*   gen recall_prob2 = .
-*   replace recall_prob2 = 0 if TL_E==0
-*   replace recall_prob2 = 1 if recall==1 & TL_E==1
-*   
-*   gen recall_prob3 = .
-*   replace recall_prob3 = 0 if JL_E==0
-*   replace recall_prob3 = 1 if recall==1 & JL_E==1
-*   
-*   gen recall_prob4 = .
-*   replace recall_prob4 = 0 if UE==0
-*   replace recall_prob4 = 1 if recall==1 & UE==1
-*   
-*   replace recall   = recall * UE
-*   
-* *  if `i'==2 {
-* *    keep if swave<=6
-* * drop if (rwkesr2==3 | rwkesr==4) & spell_length>4
-* *  }
-*   
-*   collapse (count) num=recall (mean) unrate recall* UE E_U E_TL E_JL JL_E TL_E, by(ym)
-* 
-*   sum unrate recall_prob2 TL_E JL_E E_TL E_JL
-*   pwcorr unrate recall_prob2 TL_E JL_E E_TL E_JL, sig
+save tmpdata/alldata, replace
 
-use tmpdata/alldata`jobMethod', clear
+use tmpdata/alldata, clear
 capture frame change default
 
 * -----------------
@@ -140,8 +79,8 @@ foreach ipanel in 1996 2001 2004 2008 {
   }
 }
 
-frame hazard_panel: replace pR=. if rwkesr2==4 & duration>4
-frame hazard_panel: replace pN=. if rwkesr2==4 & duration>4
+*frame hazard_panel: replace pR=. if rwkesr2==4 & duration>4
+*frame hazard_panel: replace pN=. if rwkesr2==4 & duration>4
 frame hazard_panel: sort rwkesr2 duration spanel
 frame hazard_panel: outsheet using hazard_panel.csv, comma replace
 
@@ -203,8 +142,8 @@ forvalues j=3/4 {
   }
 }
 
-frame hazard_srefmonA: replace pR=. if rwkesr2==4 & duration>4
-frame hazard_srefmonA: replace pN=. if rwkesr2==4 & duration>4
+*frame hazard_srefmonA: replace pR=. if rwkesr2==4 & duration>4
+*frame hazard_srefmonA: replace pN=. if rwkesr2==4 & duration>4
 frame hazard_srefmonA: sort rwkesr2 srefmonA duration
 frame hazard_srefmonA: outsheet using hazard_srefmonA.csv, comma replace
 
@@ -232,6 +171,8 @@ forvalues iesr = 3/4 {
 }
 
 frame change default
+use tmpdata/alldata, clear
+
 
 forvalues j=3/4 {
   if (`j'==3) {
@@ -260,36 +201,13 @@ forvalues j=3/4 {
   }
 }
 
-frame hazard: replace pR=. if rwkesr2==4 & duration>4
-frame hazard: replace pN=. if rwkesr2==4 & duration>4
 frame hazard: sort rwkesr2 duration
 frame hazard: outsheet using hazard.csv, comma replace
 
-frame hazard: replace pR=. if rwkesr2==4 & duration>4
-frame hazard: replace pN=. if rwkesr2==4 & duration>4
-
-gen seam_cross = 1 if (rwkesr2==3 | rwkesr2==4) & spell_length<=4
-replace seam_cross = 0 if srefmonA==3 & srefmonZ==3 & (rwkesr2==3 | rwkesr2==4) & spell_length<=4
-replace seam_cross = 0 if srefmonA==3 & srefmonZ==4 & (rwkesr2==3 | rwkesr2==4) & spell_length<=4
-replace seam_cross = 0 if srefmonA==4 & srefmonZ==4 & (rwkesr2==3 | rwkesr2==4) & spell_length<=4
-
-gen info_lost = 0
-replace info_lost = 1 if rwkesr2==4 & srefmonA==1 & spell_length>=4
-replace info_lost = 1 if rwkesr2==4 & srefmonA==2 & spell_length>=7
-replace info_lost = 1 if rwkesr2==4 & srefmonA==3 & spell_length>=11
-
-*x gen seam_cross = 0 if (rwkesr2==3 | rwkesr2==4) & spell_length<=4
-*x replace seam_cross = 1 if srefmonZ==4 & (rwkesr2==3 | rwkesr2==4) & spell_length<=4
-*x replace seam_cross = 1 if srefmonZ==1 & (rwkesr2==3 | rwkesr2==4) & spell_length<=4
-*x replace seam_cross = 1 if srefmonA>2 & srefmonZ==2 & (rwkesr2==3 | rwkesr2==4) & spell_length<=4
-*x replace seam_cross = 1 if srefmonA>3 & srefmonZ==3 & (rwkesr2==3 | rwkesr2==4) & spell_length<=4
-
-tab seam_cross rwkesr2 if spell_length<=2, col
-tab seam_cross rwkesr2 if spell_length<=4, col
 
 
 clear all
-use tmpdata/alldata`jobMethod', clear
+use tmpdata/alldata, clear
 
 
 capture frame drop hazard
@@ -335,7 +253,7 @@ frame hazard: gen pR = .
 frame hazard: gen TL = .
 frame hazard: gen panel = .
 
-foreach panel in 1996 2001 2004 {
+foreach panel in 1996 2001 2004 2008 {
   forvalues j=3/4 {
     if (`j'==3) {
       di "TL"
@@ -360,13 +278,30 @@ foreach panel in 1996 2001 2004 {
 }
 
 
+* HOW MANY SEAM CROSSERS?
+
+tab multiple_Ucodes if spell_end==tt & swave<=6
+tab multiple_Ucodes if rwkesr2==3 & spell_end==tt
+tab multiple_Ucodes if rwkesr2==4 & spell_end==tt
+
+gen seam_cross = 0
+#delimit;
+replace seam_cross = 1 if (rwkesr2==3 | rwkesr2==4)
+  & (srefmonA==2 & srefmonZ==2 & spell_length==1
+    | srefmonA==2 & srefmonZ==3 & spell_length==2
+    | srefmonA==3 & srefmonZ==3 & spell_length==1);
+#delimit cr
+
+tab seam_cross if rwkesr2==4 & spell_end==tt & spell_length<=4
+tab seam_cross if rwkesr2==4 & spell_end==tt & spell_length<=6
+
 
 capture file close tmpfile
 file open tmpfile using "tables/stats.txt", write replace
 
-file write tmpfile _n "# Recall rates" _n
-
 forvalues j=3/4 {
+
+file write tmpfile _n "# Recall shares" _n
 
   if `j'==3 {
     local state = "TL"
@@ -375,14 +310,46 @@ forvalues j=3/4 {
     local state = "PS"
   }
 
-  reg recall if rwkesr2==`j' & spell_end==tt & spell_length<=4 & swave<=6 [pw=lgtwgt]
+  reg recall if rwkesr2==`j' & EUE==1 & job_info_lost==0 & spell_end==tt & spell_length<=4 & swave<=6 [pw=lgtwgt]
   file write tmpfile "s/\<recall_`state'\>/" %5.3f (_b[_cons]) "/g"  _n
-  count if rwkesr2==`j' & spell_end==tt & spell_length<=4 & swave<=6 & spanel ==1996
   foreach ispanel in 1996 2001 2004 2008 {
-    reg recall if rwkesr2==`j' & spell_end==tt & spell_length<=4 & swave<=6 & spanel==`ispanel' [pw=lgtwgt]
+    reg recall if rwkesr2==`j' & EUE==1 & job_info_lost==0 & spell_end==tt & spell_length<=4 & swave<=6 & spanel==`ispanel' [pw=lgtwgt]
     file write tmpfile "s/\<recall_`state'_`ispanel'\>/" %5.3f (_b[_cons]) "/g"  _n
   }
 }
+
+
+forvalues ilength = 2/8 {
+
+file write tmpfile _n "# Recall shares by duration & controlling for missing data, spell duration lte `ilength'" _n
+
+  forvalues j=3/4 {
+  
+    if `j'==3 {
+      local state = "TL"
+    }
+    else {
+      local state = "PS"
+    }
+  
+    reg recall if rwkesr2==`j' & EUE==1 & spell_end==tt & spell_length<=`ilength' & swave<=6 [pw=lgtwgt]
+    file write tmpfile "s/\<rShare_`state'_`ilength'\>/" %5.3f (_b[_cons]) "/g"  _n
+    foreach ispanel in 1996 2001 2004 2008 {
+      reg recall if rwkesr2==`j' & EUE==1 & spell_end==tt & spell_length<=`ilength' & swave<=6 & spanel==`ispanel' [pw=lgtwgt]
+      file write tmpfile "s/\<rShare_`state'_`ilength'_`ispanel'\>/" %5.3f (_b[_cons]) "/g"  _n
+    }
+  
+    if (`j'==4 & `ilength'<8) {
+      reg recall if rwkesr2==`j' & EUE==1 & spell_end==tt & spell_length<=`ilength' & job_info_lost==0 & swave<=6 [pw=lgtwgt]
+      file write tmpfile "s/\<rShare_`state'_jinfo_`ilength'\>/" %5.3f (_b[_cons]) "/g"  _n
+      foreach ispanel in 1996 2001 2004 2008 {
+        reg recall if rwkesr2==`j' & EUE==1 & spell_end==tt & spell_length<=`ilength' & swave<=6 & spanel==`ispanel' [pw=lgtwgt]
+        file write tmpfile "s/\<rShare_`state'_jinfo_`ilength'_`ispanel'\>/" %5.3f (_b[_cons]) "/g"  _n
+      }
+    }
+  }
+}
+
 
 
 file write tmpfile _n _n "# Distribution of first month" _n
@@ -396,17 +363,6 @@ forvalues i=1/4 {
   file write tmpfile "s/\<srefmonA`i'_PS\>/" %5.3f (_b[_cons]) "/g"  _n
 }
 
-*rm  file write tmpfile _n _n "# Distribution of first and last month" _n
-*rm  
-*rm  forvalues i=1/4 {
-*rm    capture drop tmp
-*rm    gen tmp = (srefmonA==`i')
-*rm    reg tmp [pw=lgtwgt] if spell_length<=4 & spell_begin==tt & rwkesr2==3 & EUE==1
-*rm    file write tmpfile "s/\<srefmonA`i'_TL\>/" %5.3f (_b[_cons]) "/g"  _n
-*rm    reg tmp [pw=lgtwgt] if spell_length<=4 & spell_begin==tt & rwkesr2==4 & EUE==1
-*rm    file write tmpfile "s/\<srefmonA`i'_PS\>/" %5.3f (_b[_cons]) "/g"  _n
-*rm  }
-
 file write tmpfile _n _n "# Distribution of last month" _n
 
 forvalues i=1/4 {
@@ -416,50 +372,6 @@ forvalues i=1/4 {
   file write tmpfile "s/\<srefmonZ`i'_TL\>/" %5.3f (_b[_cons]) "/g"  _n
   reg tmp [pw=lgtwgt] if spell_length<=4 & spell_begin==tt & rwkesr2==4 & EUE==1
   file write tmpfile "s/\<srefmonZ`i'_PS\>/" %5.3f (_b[_cons]) "/g"  _n
-  * similar to "tab rwkesr2 srefmonZ if spell_length<=4 & 
-  * spell_begin==tt & EUE==1, row", but with panel weights
 }
 
 file close tmpfile
-
-*rm forvalues i=1/4 {
-*rm   forvalues j=3/4 {
-*rm   di "srefmonA is `i'"
-*rm     reg recall if rwkesr2==`j' & srefmonA==`i' & spell_end==tt & spell_length<=4 & swave<=6 [pw=lgtwgt]
-*rm   }
-*rm }
-*rm 
-*rm gen seam_cross = 1 if (rwkesr2==3 | rwkesr2==4) & spell_length<=4
-*rm replace seam_cross = 0 if srefmonA==3 & srefmonZ==3 & (rwkesr2==3 | rwkesr2==4) & spell_length<=4
-*rm replace seam_cross = 0 if srefmonA==3 & srefmonZ==4 & (rwkesr2==3 | rwkesr2==4) & spell_length<=4
-*rm replace seam_cross = 0 if srefmonA==4 & srefmonZ==4 & (rwkesr2==3 | rwkesr2==4) & spell_length<=4
-*rm 
-*rm 
-*rm * "short spells" w/ seam cross
-*rm reg recall if (rwkesr2==3 | rwkesr2==4) & spell_end==tt & seam_cross==1 & spell_length<=2 & spell_length>0 & swave<=6 [pw=lgtwgt]
-*rm reg recall if (rwkesr2==3 | rwkesr2==4) & spell_end==tt & seam_cross==0 & spell_length<=2 & spell_length>0 & swave<=6 [pw=lgtwgt]
-*rm 
-*rm * "longer spells" w/ seam cross
-*rm reg recall if (rwkesr2==3 | rwkesr2==4) & spell_end==tt & seam_cross==1 & spell_length<=4 & spell_length>0 & swave<=6 [pw=lgtwgt]
-*rm reg recall if (rwkesr2==3 | rwkesr2==4) & spell_end==tt & seam_cross==0 & spell_length<=4 & spell_length>0 & swave<=6 [pw=lgtwgt]
-*rm 
-*rm * "long spells"
-*rm reg recall if (rwkesr2==3 | rwkesr2==4) & spell_end==tt & spell_length<=6 & spell_length>2 & swave<=6 [pw=lgtwgt]
-*rm 
-*rm 
-*rm 
-*rm reg recall if rwkesr2==3 & spell_end==tt & spell_length<=6 & swave<=6 [pw=lgtwgt]
-*rm 
-*rm reg recall if rwkesr2==4 & unemp_type==4 & spell_end==tt & spell_length<=3 & swave<=6 & srefmonZ<4
-*rm reg recall if rwkesr2==3 & unemp_type==3 & spell_end==tt & spell_length<=3 & swave<=6
-*rm reg recall if rwkesr2==3 & unemp_type==3 & spell_end==tt & spell_length<=3 & swave<=6 & srefmonZ<4
-*rm 
-*rm reg recall if rwkesr2==3 & unemp_type==3 & spell_end==tt & spell_length<=3 & swave<=6
-*rm reg recall if rwkesr2==3 & unemp_type==3 & spell_end==tt & spell_length<=12 & swave<=6
-*rm 
-*rm 
-*rm 
-*rm 
-*rm frame hazard: outsheet using hazards.csv, comma replace
-*rm 
-*rm * compute recall probability without loss of recall.
